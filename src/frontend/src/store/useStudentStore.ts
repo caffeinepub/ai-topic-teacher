@@ -35,6 +35,7 @@ export interface StudentData {
 }
 
 const STORAGE_KEY = "readwise_student";
+export const ALL_STUDENTS_KEY = "classio_all_students";
 
 const defaultStudent: StudentData = {
   name: "",
@@ -46,6 +47,19 @@ const defaultStudent: StudentData = {
   passageOffsets: {},
   proficiencyDone: false,
 };
+
+function upsertAllStudents(data: StudentData) {
+  try {
+    const raw = localStorage.getItem(ALL_STUDENTS_KEY);
+    const all: StudentData[] = raw ? JSON.parse(raw) : [];
+    const idx = all.findIndex((s) => s.name === data.name);
+    if (idx >= 0) all[idx] = data;
+    else all.push(data);
+    localStorage.setItem(ALL_STUDENTS_KEY, JSON.stringify(all));
+  } catch {
+    // ignore storage errors
+  }
+}
 
 export function useStudentStore() {
   const [student, setStudentState] = useState<StudentData>(() => {
@@ -66,6 +80,7 @@ export function useStudentStore() {
   const save = (data: StudentData) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setStudentState(data);
+    if (data.name) upsertAllStudents(data);
   };
 
   const createStudent = (name: string, grade: number) => {
@@ -158,4 +173,23 @@ export function useStudentStore() {
     reset,
     averageScore,
   };
+}
+
+export function useAllStudentsStore() {
+  const [students, setStudents] = useState<StudentData[]>(() => {
+    try {
+      const raw = localStorage.getItem(ALL_STUDENTS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const deleteStudent = (name: string) => {
+    const updated = students.filter((s) => s.name !== name);
+    localStorage.setItem(ALL_STUDENTS_KEY, JSON.stringify(updated));
+    setStudents(updated);
+  };
+
+  return { students, deleteStudent };
 }

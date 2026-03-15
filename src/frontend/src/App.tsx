@@ -2,6 +2,7 @@ import AppHeader from "@/components/AppHeader";
 import ComprehensionQuiz from "@/components/ComprehensionQuiz";
 import Dashboard from "@/components/Dashboard";
 import IntonationPractice from "@/components/IntonationPractice";
+import LoginPage from "@/components/LoginPage";
 import MissingWords from "@/components/MissingWords";
 import Onboarding from "@/components/Onboarding";
 import PassageReader from "@/components/PassageReader";
@@ -10,12 +11,14 @@ import ProgressReport from "@/components/ProgressReport";
 import PronunciationPractice from "@/components/PronunciationPractice";
 import ReadAndRecord from "@/components/ReadAndRecord";
 import type { WordResult } from "@/components/ReadAndRecord";
+import TeacherDashboard from "@/components/TeacherDashboard";
 import { Toaster } from "@/components/ui/sonner";
 import { getPassageByGrade, hasMorePassages } from "@/data/content";
 import { useStudentStore } from "@/store/useStudentStore";
 import { useState } from "react";
 
 type Screen =
+  | "login"
   | "onboarding"
   | "proficiency-test"
   | "dashboard"
@@ -26,7 +29,8 @@ type Screen =
   | "record"
   | "intonation"
   | "report"
-  | "completed";
+  | "completed"
+  | "teacher-dashboard";
 
 export default function App() {
   const {
@@ -38,7 +42,7 @@ export default function App() {
     averageScore,
   } = useStudentStore();
   const [screen, setScreen] = useState<Screen>(() => {
-    if (!student.name) return "onboarding";
+    if (!student.name) return "login";
     if (!student.proficiencyDone) return "proficiency-test";
     return "dashboard";
   });
@@ -49,6 +53,15 @@ export default function App() {
 
   const currentOffset = student.passageOffsets?.[student.grade] ?? 0;
   const passage = getPassageByGrade(student.grade, currentOffset);
+
+  const handleStudentLogin = (name: string) => {
+    setPendingName(name);
+    setScreen("proficiency-test");
+  };
+
+  const handleTeacherLogin = () => {
+    setScreen("teacher-dashboard");
+  };
 
   const handleOnboarding = (name: string) => {
     setPendingName(name);
@@ -140,15 +153,41 @@ export default function App() {
 
   const handleReset = () => {
     reset();
-    setScreen("onboarding");
+    setScreen("login");
   };
 
   const handleBackToHome = () => {
-    setScreen("onboarding");
+    setScreen("login");
   };
 
+  if (screen === "login") {
+    return (
+      <>
+        <LoginPage
+          onStudentLogin={handleStudentLogin}
+          onTeacherLogin={handleTeacherLogin}
+        />
+        <Toaster />
+      </>
+    );
+  }
+
+  if (screen === "teacher-dashboard") {
+    return (
+      <>
+        <TeacherDashboard onBack={() => setScreen("login")} />
+        <Toaster />
+      </>
+    );
+  }
+
   if (screen === "onboarding") {
-    return <Onboarding onComplete={handleOnboarding} />;
+    return (
+      <>
+        <Onboarding onComplete={handleOnboarding} />
+        <Toaster />
+      </>
+    );
   }
 
   if (screen === "proficiency-test") {
