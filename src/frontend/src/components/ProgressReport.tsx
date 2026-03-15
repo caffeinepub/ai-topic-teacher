@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
+import { passages } from "@/data/content";
 import type { StudentData } from "@/store/useStudentStore";
+import { useState } from "react";
 
 type Screen =
   | "dashboard"
@@ -38,7 +40,7 @@ const allBadges = [
 const activityLabels: Record<string, string> = {
   quiz: "📖 Quiz",
   "missing-words": "✏️ Missing Words",
-  record: "🎙️ Record",
+  record: "🎤 Record",
   pronunciation: "🗣️ Pronunciation",
   intonation: "🎵 Intonation",
 };
@@ -89,6 +91,9 @@ export default function ProgressReport({
 }: Props) {
   const quizSessions = student.sessions.filter((s) => s.activity === "quiz");
   const gradeHistory = quizSessions.map((s) => s.grade);
+  const [expandedSession, setExpandedSession] = useState<string | null>(null);
+
+  const recentSessions = student.sessions.slice(-5).reverse();
 
   return (
     <div className="min-h-screen bg-white">
@@ -216,21 +221,130 @@ export default function ProgressReport({
               <p className="font-semibold text-gray-700 mb-3">
                 Recent Activity
               </p>
-              <div className="space-y-2">
-                {student.sessions
-                  .slice(-5)
-                  .reverse()
-                  .map((s) => (
+              <div className="space-y-3">
+                {recentSessions.map((s, idx) => {
+                  const isQuiz = s.activity === "quiz";
+                  const hasAnswers =
+                    isQuiz && s.quizAnswers && s.quizAnswers.length > 0;
+                  const passageData = hasAnswers
+                    ? passages.find((p) => p.id === s.passageId)
+                    : null;
+                  const isExpanded = expandedSession === s.id;
+                  const passed = isQuiz && s.score > 40;
+
+                  return (
                     <div
                       key={s.id}
-                      className="flex items-center justify-between text-sm"
+                      data-ocid={`report.item.${idx + 1}`}
+                      className="bg-white rounded-xl border border-gray-100 overflow-hidden"
                     >
-                      <span>{activityLabels[s.activity] || s.activity}</span>
-                      <span className="text-gray-500">
-                        {s.activity === "quiz" ? `${s.score}%` : "✓"}
-                      </span>
+                      <div className="flex items-center justify-between px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">
+                            {activityLabels[s.activity] || s.activity}
+                          </span>
+                          {s.passageTitle && (
+                            <span className="text-xs text-gray-400 truncate max-w-[100px]">
+                              {s.passageTitle}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isQuiz ? (
+                            <span
+                              className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                passed
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {passed ? "PASS" : "FAIL"} {s.score}%
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 text-sm">✓</span>
+                          )}
+                          {hasAnswers && passageData && (
+                            <button
+                              type="button"
+                              data-ocid={`report.item.toggle.${idx + 1}`}
+                              onClick={() =>
+                                setExpandedSession(isExpanded ? null : s.id)
+                              }
+                              className="text-xs text-blue-600 font-semibold underline ml-1"
+                            >
+                              {isExpanded ? "Hide" : "Review"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {isExpanded && passageData && s.quizAnswers && (
+                        <div className="border-t border-gray-100 px-3 py-3 space-y-3 bg-gray-50">
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                            📋 Question Review
+                          </p>
+                          {passageData.questions.map((q, qi) => {
+                            const studentAnswer = s.quizAnswers![qi];
+                            const isCorrect = studentAnswer === q.correct;
+                            return (
+                              <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: questions are stable
+                                key={qi}
+                                className="bg-white rounded-xl p-3 border border-gray-100"
+                              >
+                                <p className="text-sm font-semibold text-gray-800 mb-2">
+                                  <span className="text-blue-500 mr-1">
+                                    Q{qi + 1}.
+                                  </span>
+                                  {q.question}
+                                </p>
+                                <div className="space-y-1">
+                                  {q.options.map((opt, oi) => {
+                                    const isStudentChoice =
+                                      studentAnswer === oi;
+                                    const isCorrectAnswer = q.correct === oi;
+
+                                    let bgClass =
+                                      "bg-gray-50 border-gray-200 text-gray-500";
+                                    let icon = "";
+
+                                    if (isStudentChoice && isCorrect) {
+                                      bgClass =
+                                        "bg-green-50 border-green-400 text-green-800";
+                                      icon = "✅";
+                                    } else if (isStudentChoice && !isCorrect) {
+                                      bgClass =
+                                        "bg-red-50 border-red-400 text-red-800";
+                                      icon = "❌";
+                                    } else if (!isCorrect && isCorrectAnswer) {
+                                      bgClass =
+                                        "bg-green-50 border-green-300 text-green-700";
+                                      icon = "✔️";
+                                    }
+
+                                    return (
+                                      <div
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: options stable
+                                        key={oi}
+                                        className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs font-medium ${bgClass}`}
+                                      >
+                                        <span className="font-bold text-gray-400">
+                                          {String.fromCharCode(65 + oi)}.
+                                        </span>
+                                        <span className="flex-1">{opt}</span>
+                                        {icon && <span>{icon}</span>}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  );
+                })}
               </div>
             </div>
           )}

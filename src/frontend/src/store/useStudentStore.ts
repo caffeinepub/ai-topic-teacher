@@ -12,6 +12,8 @@ export interface Session {
     | "pronunciation"
     | "intonation";
   timestamp: number;
+  quizAnswers?: number[];
+  passageTitle?: string;
 }
 
 export interface StudentData {
@@ -42,7 +44,6 @@ export function useStudentStore() {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Migrate old data without passageOffsets
         if (!parsed.passageOffsets) parsed.passageOffsets = {};
         return parsed;
       }
@@ -84,7 +85,6 @@ export function useStudentStore() {
       lastActivity: Date.now(),
     };
 
-    // Adaptive grade adjustment for quiz
     if (session.activity === "quiz") {
       if (session.score >= 80 && updated.grade < 5)
         updated.grade = updated.grade + 1;
@@ -92,7 +92,6 @@ export function useStudentStore() {
         updated.grade = updated.grade - 1;
     }
 
-    // Badge unlocks
     const badges = new Set(updated.badges);
     const quizCount = updated.sessions.filter(
       (s) => s.activity === "quiz",

@@ -1,3 +1,4 @@
+import type { WordResult } from "@/components/ReadAndRecord";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { Passage } from "@/data/content";
@@ -5,16 +6,16 @@ import { useState } from "react";
 
 interface Props {
   passage: Passage;
-  onComplete: (score: number, passed: boolean) => void;
+  wordResults?: WordResult[];
+  onComplete: (score: number, passed: boolean, answers: number[]) => void;
   onBack: () => void;
-  onRetry: () => void;
 }
 
 export default function ComprehensionQuiz({
   passage,
+  wordResults,
   onComplete,
   onBack,
-  onRetry,
 }: Props) {
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -24,6 +25,7 @@ export default function ComprehensionQuiz({
     correct: number;
     score: number;
     passed: boolean;
+    finalAnswers: number[];
   } | null>(null);
 
   const q = passage.questions[current];
@@ -42,25 +44,26 @@ export default function ComprehensionQuiz({
         (a, i) => a === passage.questions[i].correct,
       ).length;
       const score = Math.round((correct / total) * 100);
+      // Pass = more than 2 out of 5 (i.e. 3 or more correct)
       const passed = correct >= 3;
       setAnswers(newAnswers);
-      setResultData({ correct, score, passed });
+      setResultData({ correct, score, passed, finalAnswers: newAnswers });
       setShowResult(true);
-      onComplete(score, passed);
+      onComplete(score, passed, newAnswers);
     }
   };
 
-  const handleRetry = () => {
-    setCurrent(0);
-    setSelected(null);
-    setAnswers([]);
-    setShowResult(false);
-    setResultData(null);
-    onRetry();
-  };
-
   if (showResult && resultData) {
-    const { correct, score, passed } = resultData;
+    const { correct, passed, finalAnswers } = resultData;
+
+    // Reading stats
+    const missedCount =
+      wordResults?.filter((w) => w.status === "missed").length ?? 0;
+    const mispronounced =
+      wordResults?.filter((w) => w.status === "mispronounced").length ?? 0;
+    const correctWords =
+      wordResults?.filter((w) => w.status === "correct").length ?? 0;
+    const totalWords = wordResults?.length ?? 0;
 
     return (
       <div className="min-h-screen bg-white flex flex-col">
@@ -69,22 +72,21 @@ export default function ComprehensionQuiz({
             CLASSIO
           </span>
         </div>
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-md w-full text-center">
-            <div className="text-6xl mb-4">
-              {passed ? (score >= 80 ? "🎉" : "👍") : "💪"}
-            </div>
+        <div className="flex-1 p-4 max-w-md mx-auto w-full space-y-6">
+          {/* Quiz Score */}
+          <div className="text-center">
+            <div className="text-6xl mb-4">{passed ? "🎉" : "💪"}</div>
             <h2 className="font-display text-3xl font-bold text-gray-800 mb-2">
               Quiz Complete!
             </h2>
             <div className="text-5xl font-bold text-blue-600 mb-2">
-              {score}%
+              {correct}/{total}
             </div>
             <p className="text-gray-600 mb-4">
-              {correct} out of {total} correct
+              You got {correct} out of {total} correct
             </p>
 
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-4">
               {passed ? (
                 <span
                   data-ocid="quiz.success_state"
@@ -103,59 +105,160 @@ export default function ComprehensionQuiz({
             </div>
 
             <div
-              className={`rounded-2xl p-4 mb-6 ${
+              className={`rounded-2xl p-4 ${
                 passed
-                  ? score >= 80
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-yellow-50 border border-yellow-200"
+                  ? "bg-green-50 border border-green-200"
                   : "bg-rose-50 border border-rose-200"
               }`}
             >
               <p
                 className={`font-semibold ${
-                  passed
-                    ? score >= 80
-                      ? "text-green-700"
-                      : "text-yellow-700"
-                    : "text-rose-700"
+                  passed ? "text-green-700" : "text-rose-700"
                 }`}
               >
                 {passed
-                  ? score >= 80
-                    ? "🌟 Amazing! You're moving up a level!"
-                    : "📚 Good effort! Keep practicing at this level."
-                  : "🔄 Don't give up! Try the same passage again."}
+                  ? "🌟 Great job! You can move on to the next passage."
+                  : "🔄 You need 3 or more correct to pass. Read the passage again and try once more!"}
               </p>
             </div>
+          </div>
 
-            {passed ? (
-              <Button
-                data-ocid="quiz.done.button"
-                onClick={onBack}
-                className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-lg"
-              >
-                Next Passage →
-              </Button>
-            ) : (
-              <div className="space-y-3">
-                <Button
-                  data-ocid="quiz.retry.button"
-                  onClick={handleRetry}
-                  className="w-full h-12 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-lg"
+          {/* Question Review */}
+          <div>
+            <h3 className="font-bold text-gray-800 text-lg mb-3 flex items-center gap-2">
+              📋 Question & Answer Review
+            </h3>
+            <div className="space-y-4">
+              {passage.questions.map((q, qi) => {
+                const studentAnswer = finalAnswers[qi];
+                const isCorrect = studentAnswer === q.correct;
+                return (
+                  <div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: questions are stable
+                    key={qi}
+                    className="bg-gray-50 rounded-2xl p-4 border border-gray-100"
+                  >
+                    <p className="font-semibold text-gray-800 mb-3">
+                      <span className="text-blue-500 mr-1">Q{qi + 1}.</span>{" "}
+                      {q.question}
+                    </p>
+                    <div className="space-y-2">
+                      {q.options.map((opt, oi) => {
+                        const isStudentChoice = studentAnswer === oi;
+                        const isCorrectAnswer = q.correct === oi;
+
+                        let bgClass = "bg-white border-gray-200 text-gray-600";
+                        let icon = "";
+
+                        if (isStudentChoice && isCorrect) {
+                          bgClass =
+                            "bg-green-50 border-green-400 text-green-800";
+                          icon = "✅";
+                        } else if (isStudentChoice && !isCorrect) {
+                          bgClass = "bg-red-50 border-red-400 text-red-800";
+                          icon = "❌";
+                        } else if (!isStudentChoice && isCorrectAnswer) {
+                          bgClass =
+                            "bg-green-50 border-green-300 text-green-700";
+                          icon = "✔️";
+                        }
+
+                        return (
+                          <div
+                            // biome-ignore lint/suspicious/noArrayIndexKey: options are stable per question
+                            key={oi}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium ${bgClass}`}
+                          >
+                            <span className="font-bold text-gray-400 mr-1">
+                              {String.fromCharCode(65 + oi)}.
+                            </span>
+                            <span className="flex-1">{opt}</span>
+                            {icon && <span>{icon}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Combined Report */}
+          <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5">
+            <h3 className="font-bold text-indigo-800 text-lg mb-4 flex items-center gap-2">
+              📊 Your Full Report
+            </h3>
+
+            {/* Quiz score */}
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">
+                Quiz Score
+              </p>
+              <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-indigo-100">
+                <span className="text-3xl font-extrabold text-blue-600">
+                  {correct}/{total}
+                </span>
+                <span className="text-gray-600 text-sm">questions correct</span>
+                <span
+                  className={`ml-auto font-bold text-sm px-3 py-1 rounded-full ${
+                    passed
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
                 >
-                  Try Again 🔁
-                </Button>
-                <Button
-                  data-ocid="quiz.done.button"
-                  variant="outline"
-                  onClick={onBack}
-                  className="w-full h-12 rounded-xl text-gray-600"
-                >
-                  Back to Home
-                </Button>
+                  {passed ? "PASS" : "FAIL"}
+                </span>
+              </div>
+            </div>
+
+            {/* Reading stats */}
+            {totalWords > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">
+                  Reading Analysis
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-green-50 rounded-xl p-3 text-center border border-green-200">
+                    <div className="text-2xl font-bold text-green-600">
+                      {correctWords}
+                    </div>
+                    <div className="text-xs text-green-700 font-semibold mt-1">
+                      Correct Words
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 rounded-xl p-3 text-center border border-orange-200">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {mispronounced}
+                    </div>
+                    <div className="text-xs text-orange-700 font-semibold mt-1">
+                      Mispronounced
+                    </div>
+                  </div>
+                  <div className="bg-rose-50 rounded-xl p-3 text-center border border-rose-200">
+                    <div className="text-2xl font-bold text-rose-600">
+                      {missedCount}
+                    </div>
+                    <div className="text-xs text-rose-700 font-semibold mt-1">
+                      Not Read
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
+
+          <Button
+            data-ocid="quiz.done.button"
+            onClick={onBack}
+            className={`w-full h-12 rounded-xl text-white text-lg ${
+              passed
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-red-500 hover:bg-red-600"
+            }`}
+          >
+            {passed ? "Next Passage →" : "Try Again 🔄"}
+          </Button>
         </div>
       </div>
     );

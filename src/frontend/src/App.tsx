@@ -7,6 +7,7 @@ import PassageReader from "@/components/PassageReader";
 import ProgressReport from "@/components/ProgressReport";
 import PronunciationPractice from "@/components/PronunciationPractice";
 import ReadAndRecord from "@/components/ReadAndRecord";
+import type { WordResult } from "@/components/ReadAndRecord";
 import { Toaster } from "@/components/ui/sonner";
 import { getPassageByGrade, hasMorePassages } from "@/data/content";
 import { useStudentStore } from "@/store/useStudentStore";
@@ -36,6 +37,9 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>(
     student.name ? "dashboard" : "onboarding",
   );
+  const [recordingWordResults, setRecordingWordResults] = useState<
+    WordResult[]
+  >([]);
 
   const currentOffset = student.passageOffsets?.[student.grade] ?? 0;
   const passage = getPassageByGrade(student.grade, currentOffset);
@@ -45,14 +49,22 @@ export default function App() {
     setScreen("dashboard");
   };
 
-  const handleQuizComplete = (score: number, passed: boolean) => {
+  const handleQuizComplete = (
+    score: number,
+    passed: boolean,
+    quizAnswers: number[],
+  ) => {
     addSession({
       passageId: passage.id,
       grade: student.grade,
       score,
       activity: "quiz",
+      quizAnswers,
+      passageTitle: passage.title,
     });
+
     if (passed) {
+      // Student passed (>2/5): advance to next passage
       advancePassage(student.grade);
       const newOffset = currentOffset + 1;
       if (!hasMorePassages(student.grade, newOffset)) {
@@ -60,6 +72,9 @@ export default function App() {
       } else {
         setScreen("dashboard");
       }
+    } else {
+      // Student failed (<=2/5): stay on same passage, go back to dashboard
+      setScreen("dashboard");
     }
   };
 
@@ -72,13 +87,15 @@ export default function App() {
     });
   };
 
-  const handleRecordComplete = () => {
+  const handleRecordComplete = (wordResults: WordResult[]) => {
+    setRecordingWordResults(wordResults);
     addSession({
       passageId: passage.id,
       grade: student.grade,
       score: 100,
       activity: "record",
     });
+    setScreen("quiz");
   };
 
   const handlePronunciationComplete = () => {
@@ -130,7 +147,7 @@ export default function App() {
               ! 🎉
             </p>
             <p className="text-gray-500 mb-8">
-              You read every passage and passed all the quizzes. That&apos;s a
+              You read every passage and answered all the quizzes. That&apos;s a
               fantastic achievement!
             </p>
             <button
@@ -162,9 +179,9 @@ export default function App() {
     return (
       <ComprehensionQuiz
         passage={passage}
+        wordResults={recordingWordResults}
         onComplete={handleQuizComplete}
         onBack={() => setScreen("dashboard")}
-        onRetry={() => setScreen("quiz")}
       />
     );
   }

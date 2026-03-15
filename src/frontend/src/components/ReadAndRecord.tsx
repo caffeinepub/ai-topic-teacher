@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 interface Props {
   passage: Passage;
-  onComplete: () => void;
+  onComplete: (wordResults: WordResult[]) => void;
   onBack: () => void;
 }
 
@@ -30,7 +30,7 @@ function normalize(word: string) {
   return word.toLowerCase().replace(/[^a-z']/g, "");
 }
 
-type WordResult = {
+export type WordResult = {
   original: string;
   status: "correct" | "mispronounced" | "missed";
   heard?: string;
@@ -122,7 +122,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
   const [transcript, setTranscript] = useState("");
   const [analysis, setAnalysis] = useState<WordResult[] | null>(null);
   const [rating, setRating] = useState<number | null>(null);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [speechSupported, setSpeechSupported] = useState(true);
 
@@ -142,7 +141,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
     setTranscript("");
     setAnalysis(null);
     setRating(null);
-    setSaved(false);
     liveTranscript.current = "";
 
     try {
@@ -196,11 +194,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
     recognition.current?.stop();
     mediaRecorder.current?.stop();
     setRecording(false);
-  };
-
-  const handleSave = () => {
-    setSaved(true);
-    onComplete();
   };
 
   const missedCount =
@@ -424,30 +417,14 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                 </div>
               </div>
 
-              {rating !== null && !saved && (
+              {rating !== null && (
                 <Button
                   data-ocid="record.save.button"
-                  onClick={handleSave}
+                  onClick={() => onComplete(analysis ?? [])}
                   className="w-full rounded-xl bg-green-600 hover:bg-green-700 text-white h-12"
                 >
-                  Save & Continue
+                  Answer 5 Questions →
                 </Button>
-              )}
-
-              {saved && (
-                <div
-                  data-ocid="record.success_state"
-                  className="text-center text-green-700 font-semibold"
-                >
-                  ✓ Saved! Great job reading aloud.
-                  <Button
-                    data-ocid="record.done.button"
-                    onClick={onBack}
-                    className="w-full mt-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white"
-                  >
-                    Back to Home
-                  </Button>
-                </div>
               )}
             </div>
           )}
