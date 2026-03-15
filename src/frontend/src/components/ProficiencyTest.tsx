@@ -1,5 +1,6 @@
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
+import { getBadge, getBadgeLabel } from "@/utils/badges";
 import { useEffect, useRef, useState } from "react";
 
 interface Props {
@@ -16,10 +17,15 @@ const PASSAGE_WORDS = PASSAGE.toLowerCase()
   .filter(Boolean);
 
 function calcGrade(accuracy: number): number {
-  if (accuracy >= 90) return 5;
-  if (accuracy >= 75) return 4;
-  if (accuracy >= 60) return 3;
-  if (accuracy >= 45) return 2;
+  if (accuracy >= 95) return 10;
+  if (accuracy >= 88) return 9;
+  if (accuracy >= 80) return 8;
+  if (accuracy >= 72) return 7;
+  if (accuracy >= 63) return 6;
+  if (accuracy >= 54) return 5;
+  if (accuracy >= 44) return 4;
+  if (accuracy >= 33) return 3;
+  if (accuracy >= 22) return 2;
   return 1;
 }
 
@@ -100,20 +106,17 @@ export default function ProficiencyTest({ name, onComplete }: Props) {
     setStep("result");
   };
 
-  const gradeColors = [
-    "bg-emerald-500",
-    "bg-blue-500",
-    "bg-purple-500",
-    "bg-orange-500",
-    "bg-rose-500",
-  ];
-
   const gradeMessages: Record<number, string> = {
-    1: "Great start! Let's begin with Grade 1 — easy and fun! 🌟",
-    2: "Good job! Grade 2 is a great match for you! 🎉",
-    3: "Awesome! Grade 3 passages are just right for you! 🚀",
-    4: "Excellent! Grade 4 will challenge you in the best way! 💪",
-    5: "Wow, you're a star reader! Grade 5 here you come! 🏆",
+    1: "Great start! You are a Seedling — every expert was once a beginner! 🌱",
+    2: "Good job! You are an Explorer — curious minds go far! 🔍",
+    3: "Awesome! You are an Adventurer — the journey has just begun! 🗺️",
+    4: "Excellent! You are a Thinker — brilliant ideas ahead! 💡",
+    5: "Well done! You are an Achiever — stars shine bright! ⭐",
+    6: "Great job! You are a Champion — champions never stop! 🏆",
+    7: "Impressive! You are a Scholar — knowledge is power! 📚",
+    8: "Amazing! You are an Innovator — sky is not the limit! 🚀",
+    9: "Outstanding! You are a Leader — lead with courage! 🦁",
+    10: "Extraordinary! You are a Master — wisdom unlocked! 🎓",
   };
 
   return (
@@ -220,13 +223,18 @@ export default function ProficiencyTest({ name, onComplete }: Props) {
                 <p className="text-gray-700 text-base font-medium">
                   {gradeMessages[suggestedGrade]}
                 </p>
-                <div className="bg-white rounded-xl py-3 px-4 border border-amber-200">
-                  <p className="text-sm text-gray-600">
-                    Suggested Grade:{" "}
-                    <span className="font-bold text-amber-700 text-lg">
-                      Grade {suggestedGrade}
+                <div className="bg-white rounded-xl py-3 px-4 border border-amber-200 flex items-center justify-center gap-3">
+                  <p className="text-sm text-gray-600">Your Badge:</p>
+                  <div
+                    className={`bg-gradient-to-br ${getBadge(suggestedGrade).gradient} px-4 py-2 rounded-xl flex items-center gap-2 shadow`}
+                  >
+                    <span className="text-2xl">
+                      {getBadge(suggestedGrade).emoji}
                     </span>
-                  </p>
+                    <span className="text-white font-extrabold text-base">
+                      {getBadge(suggestedGrade).name}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -235,22 +243,25 @@ export default function ProficiencyTest({ name, onComplete }: Props) {
                   Or choose your grade manually:
                 </p>
                 <div className="grid grid-cols-5 gap-2">
-                  {gradeColors.map((color, i) => (
-                    <button
-                      key={color}
-                      type="button"
-                      data-ocid={`proficiency.grade.${i + 1}`}
-                      onClick={() => setSelectedGrade(i + 1)}
-                      className={`p-3 rounded-xl text-white font-bold text-sm transition-all ${
-                        selectedGrade === i + 1
-                          ? `${color} scale-110 shadow-md`
-                          : "bg-gray-200 text-gray-500 hover:bg-gray-300"
-                      }`}
-                    >
-                      {i + 1}
-                      <div className="text-xs font-normal mt-0.5">Grade</div>
-                    </button>
-                  ))}
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map((g) => {
+                    const b = getBadge(g);
+                    return (
+                      <button
+                        key={g}
+                        type="button"
+                        data-ocid={`proficiency.grade.${g}`}
+                        onClick={() => setSelectedGrade(g)}
+                        className={`p-2 rounded-xl font-bold text-xs transition-all flex flex-col items-center gap-0.5 border-2 ${
+                          selectedGrade === g
+                            ? `bg-gradient-to-br ${b.gradient} text-white scale-110 shadow-md border-transparent`
+                            : "bg-gray-100 text-gray-500 hover:bg-gray-200 border-gray-200"
+                        }`}
+                      >
+                        <span className="text-lg">{b.emoji}</span>
+                        <span className="text-xs leading-tight">{b.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -260,7 +271,9 @@ export default function ProficiencyTest({ name, onComplete }: Props) {
                 onClick={() => onComplete(name, selectedGrade, accuracy)}
                 className="w-full h-14 text-lg rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold"
               >
-                Start Learning at Grade {selectedGrade}! 🚀
+                {selectedGrade > 0
+                  ? `Start as ${getBadgeLabel(selectedGrade)}! 🚀`
+                  : "Choose your level"}
               </Button>
             </div>
           )}

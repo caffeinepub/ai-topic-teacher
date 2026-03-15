@@ -2,6 +2,7 @@ import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { passages } from "@/data/content";
 import type { Session, StudentData } from "@/store/useStudentStore";
+import { getBadge, getBadgeLabel } from "@/utils/badges";
 import { useState } from "react";
 
 type Screen =
@@ -269,6 +270,68 @@ function ActivityBar({
   );
 }
 
+function AllRecordSessionsPanel({ sessions }: { sessions: Session[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const sorted = [...sessions].reverse(); // most recent first
+  return (
+    <div className="bg-white border border-amber-100 rounded-xl overflow-hidden">
+      <button
+        type="button"
+        data-ocid="report.record.sessions.toggle"
+        onClick={() => setExpanded((e) => !e)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-50 transition-colors"
+      >
+        <span>📋 All Read & Record Sessions ({sessions.length})</span>
+        <span className="text-amber-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="divide-y divide-amber-50">
+          {sorted.map((s, idx) => {
+            const mispronounced =
+              s.wordResults?.filter((w) => w.status === "mispronounced")
+                .length ?? 0;
+            const missed =
+              s.wordResults?.filter((w) => w.status === "missed").length ?? 0;
+            const insertionCount = s.insertions?.length ?? 0;
+            return (
+              <div
+                key={s.id}
+                data-ocid={`report.record.item.${idx + 1}`}
+                className="px-4 py-3 space-y-1"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-gray-700 truncate max-w-[60%]">
+                    {s.passageTitle || "Passage"}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-green-600">
+                      {s.score}%
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {formatDate(s.timestamp)}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <span className="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full">
+                    ~ {mispronounced} mispronounced
+                  </span>
+                  <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">
+                    ✗ {missed} missed
+                  </span>
+                  <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                    + {insertionCount} extra
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProgressReport({
   student,
   averageScore,
@@ -373,9 +436,12 @@ export default function ProgressReport({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-gray-700">
-                    Starting Grade:{" "}
-                    <span className="font-extrabold text-amber-600">
-                      Grade {student.proficiencyGrade ?? 0}
+                    Starting Badge:{" "}
+                    <span
+                      className={`inline-flex items-center gap-1 bg-gradient-to-br ${getBadge(student.proficiencyGrade ?? 1).gradient} text-white font-extrabold text-sm px-2 py-0.5 rounded-lg ml-1`}
+                    >
+                      {getBadge(student.proficiencyGrade ?? 1).emoji}{" "}
+                      {getBadge(student.proficiencyGrade ?? 1).name}
                     </span>
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
@@ -427,7 +493,8 @@ export default function ProgressReport({
                               : "bg-blue-100 text-blue-700"
                           }`}
                         >
-                          Grade {entry.grade}
+                          {getBadge(entry.grade).emoji}{" "}
+                          {getBadge(entry.grade).name}
                         </span>
                         <span className="text-xs text-gray-500">
                           {entry.reason}
@@ -535,11 +602,18 @@ export default function ProgressReport({
               📋 Overall Summary
             </p>
             <div className="grid grid-cols-3 gap-3 mb-3">
-              <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <p className="text-3xl font-bold text-blue-600">
-                  {student.grade}
-                </p>
-                <p className="text-gray-500 text-xs mt-1">Grade</p>
+              <div className="bg-white rounded-xl p-3 text-center shadow-sm flex flex-col items-center gap-1">
+                <div
+                  className={`bg-gradient-to-br ${getBadge(student.grade).gradient} px-2 py-1 rounded-lg flex items-center gap-1`}
+                >
+                  <span className="text-xl">
+                    {getBadge(student.grade).emoji}
+                  </span>
+                  <span className="text-white font-extrabold text-xs">
+                    {getBadge(student.grade).name}
+                  </span>
+                </div>
+                <p className="text-gray-500 text-xs mt-0.5">Badge</p>
               </div>
               <div className="bg-white rounded-xl p-3 text-center shadow-sm">
                 <p className="text-3xl font-bold text-green-600">
@@ -648,97 +722,123 @@ export default function ProgressReport({
                     )}
                   </div>
                 )}
-                <div className="bg-white rounded-xl p-3 border border-amber-100">
-                  <p className="text-xs text-gray-500 mb-2 font-semibold">
+
+                {/* ── Consolidated Speech Feedback ── */}
+                <div
+                  className="bg-white rounded-xl p-3 border border-amber-100 space-y-3"
+                  data-ocid="report.record.panel"
+                >
+                  <p className="text-xs text-gray-500 font-semibold">
                     {latestRecord.passageTitle || "Passage"} —{" "}
                     {formatDate(latestRecord.timestamp)}
                   </p>
-                  <div className="grid grid-cols-4 gap-2 mb-3">
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-blue-600">
+
+                  {/* Stats row */}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="text-center bg-green-50 rounded-lg p-2">
+                      <p className="text-lg font-bold text-green-600">
                         {latestRecord.score}%
                       </p>
                       <p className="text-xs text-gray-400">Accuracy</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-green-600">
-                        {latestRecord.wordResults?.filter(
-                          (w) => w.status === "correct",
-                        ).length ?? 0}
-                      </p>
-                      <p className="text-xs text-gray-400">Correct</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-orange-500">
+                    <div className="text-center bg-orange-50 rounded-lg p-2">
+                      <p className="text-lg font-bold text-orange-500">
                         {latestRecord.wordResults?.filter(
                           (w) => w.status === "mispronounced",
                         ).length ?? 0}
                       </p>
                       <p className="text-xs text-gray-400">Mispron.</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-red-500">
+                    <div className="text-center bg-red-50 rounded-lg p-2">
+                      <p className="text-lg font-bold text-red-500">
                         {latestRecord.wordResults?.filter(
                           (w) => w.status === "missed",
                         ).length ?? 0}
                       </p>
                       <p className="text-xs text-gray-400">Missed</p>
                     </div>
+                    <div className="text-center bg-blue-50 rounded-lg p-2">
+                      <p className="text-lg font-bold text-blue-500">
+                        {latestRecord.insertions?.length ?? 0}
+                      </p>
+                      <p className="text-xs text-gray-400">Extra Words</p>
+                    </div>
                   </div>
+
+                  {/* Summary sentence */}
+                  <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
+                    <span className="font-semibold">Summary:</span>{" "}
+                    {latestRecord.wordResults?.filter(
+                      (w) => w.status === "mispronounced",
+                    ).length ?? 0}{" "}
+                    mispronounced,{" "}
+                    {latestRecord.wordResults?.filter(
+                      (w) => w.status === "missed",
+                    ).length ?? 0}{" "}
+                    missed, {latestRecord.insertions?.length ?? 0} extra words
+                    inserted.
+                  </p>
+
                   {latestRecord.wordResults &&
                     latestRecord.wordResults.length > 0 && (
                       <>
-                        <p className="text-xs font-semibold text-gray-500 mb-2">
-                          Word Breakdown:
-                        </p>
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {latestRecord.wordResults.map((w, wi) => (
-                            <WordChip
-                              // biome-ignore lint/suspicious/noArrayIndexKey: stable
-                              key={`wr-${wi}`}
-                              word={w.original}
-                              status={w.status}
-                              heard={w.heard}
-                            />
-                          ))}
+                        {/* Word breakdown chips */}
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 mb-1.5">
+                            Word Breakdown:
+                          </p>
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {latestRecord.wordResults.map((w, wi) => (
+                              <WordChip
+                                // biome-ignore lint/suspicious/noArrayIndexKey: stable
+                                key={`wr-${wi}`}
+                                word={w.original}
+                                status={w.status}
+                                heard={w.heard}
+                              />
+                            ))}
+                          </div>
                         </div>
+
+                        {/* Mispronounced */}
                         {latestRecord.wordResults.some(
                           (w) => w.status === "mispronounced",
                         ) && (
-                          <div className="bg-orange-50 rounded-lg p-2 mb-2">
-                            <p className="text-xs font-bold text-orange-700 mb-1">
-                              Mispronounced Words:
+                          <div className="bg-orange-50 rounded-lg p-2">
+                            <p className="text-xs font-bold text-orange-700 mb-1.5">
+                              🔶 Mispronounced Words:
                             </p>
-                            <ul className="space-y-0.5">
+                            <div className="flex flex-wrap gap-1">
                               {latestRecord.wordResults
                                 .filter((w) => w.status === "mispronounced")
                                 .map((w, i) => (
-                                  <li
+                                  <span
                                     // biome-ignore lint/suspicious/noArrayIndexKey: stable
                                     key={`mp-${i}`}
-                                    className="text-xs text-orange-800"
+                                    className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-lg font-medium border border-orange-300"
+                                    title={
+                                      w.heard ? `You said: "${w.heard}"` : ""
+                                    }
                                   >
-                                    •{" "}
-                                    <span className="font-semibold">
-                                      {w.original}
-                                    </span>
-                                    {w.heard ? (
-                                      <span className="text-orange-500">
-                                        {" "}
-                                        (you said: "{w.heard}")
+                                    {w.original}
+                                    {w.heard && (
+                                      <span className="text-orange-500 ml-1">
+                                        ({w.heard})
                                       </span>
-                                    ) : null}
-                                  </li>
+                                    )}
+                                  </span>
                                 ))}
-                            </ul>
+                            </div>
                           </div>
                         )}
+
+                        {/* Missed */}
                         {latestRecord.wordResults.some(
                           (w) => w.status === "missed",
                         ) && (
                           <div className="bg-red-50 rounded-lg p-2">
-                            <p className="text-xs font-bold text-red-700 mb-1">
-                              Missed Words:
+                            <p className="text-xs font-bold text-red-700 mb-1.5">
+                              🔴 Missed Words:
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {latestRecord.wordResults
@@ -747,7 +847,7 @@ export default function ProgressReport({
                                   <span
                                     // biome-ignore lint/suspicious/noArrayIndexKey: stable
                                     key={`ms-${i}`}
-                                    className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded line-through font-medium"
+                                    className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-lg line-through font-medium border border-red-300"
                                   >
                                     {w.original}
                                   </span>
@@ -755,10 +855,34 @@ export default function ProgressReport({
                             </div>
                           </div>
                         )}
+
+                        {/* Insertions */}
+                        {(latestRecord.insertions?.length ?? 0) > 0 && (
+                          <div className="bg-blue-50 rounded-lg p-2">
+                            <p className="text-xs font-bold text-blue-700 mb-1.5">
+                              🔵 Extra Words Inserted:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {(latestRecord.insertions ?? []).map(
+                                (word, i) => (
+                                  <span
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: stable
+                                    key={`ins-${i}`}
+                                    className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-lg font-medium border border-blue-300"
+                                  >
+                                    +{word}
+                                  </span>
+                                ),
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
                 </div>
-                <div className="flex gap-2 text-xs text-gray-400">
+
+                {/* Legend */}
+                <div className="flex gap-3 text-xs text-gray-400 flex-wrap">
                   <span>
                     <span className="inline-block w-2 h-2 rounded-sm bg-green-400 mr-1" />
                     Correct
@@ -771,7 +895,16 @@ export default function ProgressReport({
                     <span className="inline-block w-2 h-2 rounded-sm bg-red-400 mr-1" />
                     Missed
                   </span>
+                  <span>
+                    <span className="inline-block w-2 h-2 rounded-sm bg-blue-400 mr-1" />
+                    Extra
+                  </span>
                 </div>
+
+                {/* All sessions history */}
+                {recordSessions.length > 1 && (
+                  <AllRecordSessionsPanel sessions={recordSessions} />
+                )}
               </div>
             ) : (
               <div

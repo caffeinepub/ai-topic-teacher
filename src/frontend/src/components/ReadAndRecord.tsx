@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 interface Props {
   passage: Passage;
-  onComplete: (wordResults: WordResult[]) => void;
+  onComplete: (wordResults: WordResult[], insertions: string[]) => void;
   onBack: () => void;
 }
 
@@ -37,7 +37,10 @@ export type WordResult = {
   heard?: string;
 };
 
-function analyzeTranscript(passage: string, transcript: string): WordResult[] {
+function analyzeTranscript(
+  passage: string,
+  transcript: string,
+): { wordResults: WordResult[]; insertions: string[] } {
   const passageWords = passage.trim().split(/\s+/);
   const heardWords = transcript
     .trim()
@@ -46,7 +49,10 @@ function analyzeTranscript(passage: string, transcript: string): WordResult[] {
     .filter(Boolean);
 
   const results: WordResult[] = [];
+  const insertions: string[] = [];
   let hi = 0;
+
+  const passageWordSet = new Set(passageWords.map(normalize).filter(Boolean));
 
   for (let pi = 0; pi < passageWords.length; pi++) {
     const expected = normalize(passageWords[pi]);
@@ -64,9 +70,21 @@ function analyzeTranscript(passage: string, transcript: string): WordResult[] {
       results.push({ original: passageWords[pi], status: "correct" });
       hi++;
     } else {
+      if (!passageWordSet.has(heardWords[hi])) {
+        insertions.push(heardWords[hi]);
+        hi++;
+        pi--;
+        continue;
+      }
+
       let foundAhead = false;
       for (let look = 1; look <= 3 && hi + look < heardWords.length; look++) {
         if (heardWords[hi + look] === expected) {
+          for (let k = hi; k < hi + look; k++) {
+            if (!passageWordSet.has(heardWords[k])) {
+              insertions.push(heardWords[k]);
+            }
+          }
           hi += look;
           results.push({ original: passageWords[pi], status: "correct" });
           hi++;
@@ -92,7 +110,7 @@ function analyzeTranscript(passage: string, transcript: string): WordResult[] {
     }
   }
 
-  return results;
+  return { wordResults: results, insertions };
 }
 
 type SpeechRecognitionType = {
@@ -117,14 +135,70 @@ declare global {
   }
 }
 
+const SHOW_LIMIT = 10;
+
+function WordListSection({
+  title,
+  emoji,
+  headerClass,
+  ocid,
+  children,
+  count,
+}: {
+  title: string;
+  emoji: string;
+  headerClass: string;
+  ocid: string;
+  children: React.ReactNode;
+  count: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div>
+      <div
+        className={`px-3 py-2 rounded-t-xl font-semibold text-sm flex items-center gap-1.5 ${headerClass}`}
+      >
+        <span>{emoji}</span>
+        <span>{title}</span>
+        <span className="ml-auto opacity-70 text-xs font-normal">
+          {count} word{count !== 1 ? "s" : ""}
+        </span>
+      </div>
+      <div
+        data-ocid={ocid}
+        className="bg-gray-50 rounded-b-xl px-3 py-3 min-h-[40px]"
+      >
+        {children}
+        {count > SHOW_LIMIT && (
+          <button
+            type="button"
+            onClick={() => setExpanded((p) => !p)}
+            className="mt-2 text-xs text-blue-600 underline"
+          >
+            {expanded ? "Show less" : `Show all ${count} words`}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
   const [recording, setRecording] = useState(false);
   const [audioURL, setAudioURL] = useState<string | null>(null);
   const [transcript, setTranscript] = useState("");
-  const [analysis, setAnalysis] = useState<WordResult[] | null>(null);
+  const [analysis, setAnalysis] = useState<{
+    wordResults: WordResult[];
+    insertions: string[];
+  } | null>(null);
   const [rating, setRating] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [speechSupported, setSpeechSupported] = useState(true);
+  const [reportExpanded, setReportExpanded] = useState<{
+    correct: boolean;
+    mispronounced: boolean;
+    missed: boolean;
+  }>({ correct: false, mispronounced: false, missed: false });
 
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -142,6 +216,7 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
     setTranscript("");
     setAnalysis(null);
     setRating(null);
+    setReportExpanded({ correct: false, mispronounced: false, missed: false });
     liveTranscript.current = "";
 
     try {
@@ -197,13 +272,21 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
     setRecording(false);
   };
 
-  const missedCount =
-    analysis?.filter((w) => w.status === "missed").length ?? 0;
-  const mispronounced =
-    analysis?.filter((w) => w.status === "mispronounced").length ?? 0;
-  const correct = analysis?.filter((w) => w.status === "correct").length ?? 0;
-  const total = analysis?.length ?? 0;
+  const wordResults = analysis?.wordResults ?? [];
+  const insertions = analysis?.insertions ?? [];
+  const missedCount = wordResults.filter((w) => w.status === "missed").length;
+  const mispronounced = wordResults.filter(
+    (w) => w.status === "mispronounced",
+  ).length;
+  const correct = wordResults.filter((w) => w.status === "correct").length;
+  const total = wordResults.length;
   const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  const correctWords = wordResults.filter((w) => w.status === "correct");
+  const misprnouncedWords = wordResults.filter(
+    (w) => w.status === "mispronounced",
+  );
+  const missedWords = wordResults.filter((w) => w.status === "missed");
 
   return (
     <div className="min-h-screen bg-white">
@@ -218,7 +301,9 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
           >
             ← Back
           </button>
-          <h2 className="font-display text-2xl font-bold">🎙️ Read & Record</h2>
+          <h2 className="font-display text-2xl font-bold">
+            🎙️ Read &amp; Record
+          </h2>
           <p className="text-white/70 text-sm mt-1">
             Record yourself reading, then see your results
           </p>
@@ -293,13 +378,14 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                 />
               </div>
 
-              {analysis && analysis.length > 0 && (
+              {wordResults.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
                   <h3 className="font-bold text-gray-800 text-base">
                     📊 Your Reading Analysis
                   </h3>
 
-                  <div className="grid grid-cols-3 gap-2 text-center">
+                  {/* Stats grid - 4 cards */}
+                  <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
                     <div className="bg-green-50 rounded-xl p-3">
                       <div className="text-2xl font-bold text-green-600">
                         {accuracy}%
@@ -316,22 +402,185 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                         Mispronounced
                       </div>
                     </div>
-                    <div className="bg-orange-100 rounded-xl p-3">
-                      <div className="text-2xl font-bold text-orange-700">
+                    <div className="bg-red-50 rounded-xl p-3">
+                      <div className="text-2xl font-bold text-red-600">
                         {missedCount}
                       </div>
-                      <div className="text-xs text-orange-800 font-semibold">
-                        Not Read
+                      <div className="text-xs text-red-700 font-semibold">
+                        Missed
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 rounded-xl p-3">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {insertions.length}
+                      </div>
+                      <div className="text-xs text-blue-700 font-semibold">
+                        Extra Words
                       </div>
                     </div>
                   </div>
 
+                  {/* ── READING REPORT ── */}
+                  <div
+                    data-ocid="record.report.card"
+                    className="border border-gray-200 rounded-2xl overflow-hidden space-y-0"
+                  >
+                    <div className="bg-gray-800 text-white px-3 py-2.5 font-bold text-sm flex items-center gap-2">
+                      📋 Reading Report
+                    </div>
+
+                    <div className="divide-y divide-gray-200">
+                      {/* Correct Words */}
+                      <WordListSection
+                        title="Correct Words"
+                        emoji="✅"
+                        headerClass="bg-green-100 text-green-800"
+                        ocid="record.correct.list"
+                        count={correctWords.length}
+                      >
+                        {correctWords.length === 0 ? (
+                          <span className="text-gray-400 text-sm">None</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {(reportExpanded.correct
+                              ? correctWords
+                              : correctWords.slice(0, SHOW_LIMIT)
+                            ).map((w, i) => (
+                              <span
+                                // biome-ignore lint/suspicious/noArrayIndexKey: stable list
+                                key={i}
+                                className="px-2 py-0.5 rounded-lg text-sm font-medium bg-green-100 border border-green-300 text-green-800"
+                              >
+                                {w.original}
+                              </span>
+                            ))}
+                            {correctWords.length > SHOW_LIMIT && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setReportExpanded((p) => ({
+                                    ...p,
+                                    correct: !p.correct,
+                                  }))
+                                }
+                                className="text-xs text-blue-600 underline self-center"
+                              >
+                                {reportExpanded.correct
+                                  ? "Show less"
+                                  : `+${correctWords.length - SHOW_LIMIT} more`}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </WordListSection>
+
+                      {/* Mispronounced Words */}
+                      <WordListSection
+                        title="Mispronounced Words"
+                        emoji="⚠️"
+                        headerClass="bg-orange-100 text-orange-800"
+                        ocid="record.mispronounced.list"
+                        count={misprnouncedWords.length}
+                      >
+                        {misprnouncedWords.length === 0 ? (
+                          <span className="text-gray-400 text-sm">None</span>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            {(reportExpanded.mispronounced
+                              ? misprnouncedWords
+                              : misprnouncedWords.slice(0, SHOW_LIMIT)
+                            ).map((w, i) => (
+                              <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: stable list
+                                key={i}
+                                className="flex items-start gap-2"
+                              >
+                                <span className="px-2 py-0.5 rounded-lg text-sm font-semibold bg-orange-100 border border-orange-400 text-orange-800">
+                                  {w.original}
+                                </span>
+                                {w.heard && (
+                                  <span className="text-xs text-gray-500 self-center">
+                                    → you said:{" "}
+                                    <span className="font-semibold text-orange-600">
+                                      {w.heard}
+                                    </span>
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                            {misprnouncedWords.length > SHOW_LIMIT && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setReportExpanded((p) => ({
+                                    ...p,
+                                    mispronounced: !p.mispronounced,
+                                  }))
+                                }
+                                className="text-xs text-blue-600 underline self-start"
+                              >
+                                {reportExpanded.mispronounced
+                                  ? "Show less"
+                                  : `+${misprnouncedWords.length - SHOW_LIMIT} more`}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </WordListSection>
+
+                      {/* Missed Words */}
+                      <WordListSection
+                        title="Missed Words"
+                        emoji="✗"
+                        headerClass="bg-red-100 text-red-800"
+                        ocid="record.missed.list"
+                        count={missedWords.length}
+                      >
+                        {missedWords.length === 0 ? (
+                          <span className="text-gray-400 text-sm">None</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {(reportExpanded.missed
+                              ? missedWords
+                              : missedWords.slice(0, SHOW_LIMIT)
+                            ).map((w, i) => (
+                              <span
+                                // biome-ignore lint/suspicious/noArrayIndexKey: stable list
+                                key={i}
+                                className="px-2 py-0.5 rounded-lg text-sm font-medium bg-red-100 border border-red-400 text-red-800 line-through"
+                              >
+                                {w.original}
+                              </span>
+                            ))}
+                            {missedWords.length > SHOW_LIMIT && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setReportExpanded((p) => ({
+                                    ...p,
+                                    missed: !p.missed,
+                                  }))
+                                }
+                                className="text-xs text-blue-600 underline self-center"
+                              >
+                                {reportExpanded.missed
+                                  ? "Show less"
+                                  : `+${missedWords.length - SHOW_LIMIT} more`}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </WordListSection>
+                    </div>
+                  </div>
+
+                  {/* Word-by-word breakdown */}
                   <div>
                     <p className="text-gray-500 text-xs font-semibold uppercase mb-2">
                       Word-by-word breakdown:
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {analysis.map((w, i) => (
+                      {wordResults.map((w, i) => (
                         <span
                           key={`${w.original}-${i}`}
                           title={
@@ -346,7 +595,7 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                               ? "bg-green-100 border-green-300 text-green-800"
                               : w.status === "mispronounced"
                                 ? "bg-orange-100 border-orange-400 text-orange-800"
-                                : "bg-orange-200 border-orange-500 text-orange-900"
+                                : "bg-red-100 border-red-400 text-red-800 line-through"
                           }`}
                         >
                           {w.original}
@@ -356,14 +605,34 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                             </span>
                           )}
                           {w.status === "missed" && (
-                            <span className="ml-1 text-orange-700 font-bold text-xs">
+                            <span className="ml-1 text-red-600 font-bold text-xs">
                               ✗
                             </span>
                           )}
                         </span>
                       ))}
                     </div>
-                    <div className="flex gap-3 mt-3 text-xs">
+
+                    {insertions.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-blue-600 text-xs font-semibold uppercase mb-1.5">
+                          Extra words you said (not in passage):
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {insertions.map((word, i) => (
+                            <span
+                              // biome-ignore lint/suspicious/noArrayIndexKey: insertions stable
+                              key={`ins-${i}`}
+                              className="px-2 py-1 rounded-lg text-sm font-medium border bg-blue-100 border-blue-400 text-blue-800"
+                            >
+                              +{word}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 mt-3 text-xs flex-wrap">
                       <span className="flex items-center gap-1">
                         <span className="w-3 h-3 rounded bg-green-200 inline-block" />
                         <span className="text-green-800 font-semibold">
@@ -377,9 +646,15 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                         </span>
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded bg-orange-300 inline-block" />
-                        <span className="text-orange-900 font-semibold">
-                          Not Read ✗
+                        <span className="w-3 h-3 rounded bg-red-200 inline-block" />
+                        <span className="text-red-800 font-semibold">
+                          Missed ✗
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded bg-blue-200 inline-block" />
+                        <span className="text-blue-800 font-semibold">
+                          Extra
                         </span>
                       </span>
                     </div>
@@ -423,7 +698,7 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
               {rating !== null && (
                 <Button
                   data-ocid="record.save.button"
-                  onClick={() => onComplete(analysis ?? [])}
+                  onClick={() => onComplete(wordResults, insertions)}
                   className="w-full rounded-xl bg-green-600 hover:bg-green-700 text-white h-12"
                 >
                   Answer 5 Questions →

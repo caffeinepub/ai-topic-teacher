@@ -21,6 +21,7 @@ export interface Session {
   quizAnswers?: number[];
   passageTitle?: string;
   wordResults?: WordResult[];
+  insertions?: string[];
 }
 
 export interface GradeHistoryEntry {
@@ -60,6 +61,30 @@ const defaultStudent: StudentData = {
   gradeHistory: [],
 };
 
+export function migrateStudentData(parsed: StudentData): StudentData {
+  if (!parsed.passageOffsets) parsed.passageOffsets = {};
+  if (parsed.proficiencyDone === undefined) parsed.proficiencyDone = true;
+  if (parsed.proficiencyScore === undefined) parsed.proficiencyScore = 0;
+  if (parsed.proficiencyGrade === undefined) parsed.proficiencyGrade = 0;
+  if (!parsed.gradeHistory) parsed.gradeHistory = [];
+  if (!parsed.sessions) parsed.sessions = [];
+  if (!parsed.badges) parsed.badges = [];
+  return parsed;
+}
+
+export function findStudentProgress(name: string): StudentData | null {
+  try {
+    const raw = localStorage.getItem(ALL_STUDENTS_KEY);
+    if (!raw) return null;
+    const all: StudentData[] = JSON.parse(raw);
+    const found = all.find((s) => s.name === name);
+    if (!found) return null;
+    return migrateStudentData({ ...found });
+  } catch {
+    return null;
+  }
+}
+
 function upsertAllStudents(data: StudentData) {
   try {
     const raw = localStorage.getItem(ALL_STUDENTS_KEY);
@@ -79,12 +104,7 @@ export function useStudentStore() {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (!parsed.passageOffsets) parsed.passageOffsets = {};
-        if (parsed.proficiencyDone === undefined) parsed.proficiencyDone = true;
-        if (parsed.proficiencyScore === undefined) parsed.proficiencyScore = 0;
-        if (parsed.proficiencyGrade === undefined) parsed.proficiencyGrade = 0;
-        if (!parsed.gradeHistory) parsed.gradeHistory = [];
-        return parsed;
+        return migrateStudentData(parsed);
       }
       return defaultStudent;
     } catch {
@@ -96,6 +116,11 @@ export function useStudentStore() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setStudentState(data);
     if (data.name) upsertAllStudents(data);
+  };
+
+  const restoreStudent = (savedData: StudentData) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
+    setStudentState(savedData);
   };
 
   const createStudent = (name: string, grade: number) => {
@@ -214,6 +239,7 @@ export function useStudentStore() {
   return {
     student,
     createStudent,
+    restoreStudent,
     completeWithProficiency,
     addSession,
     advancePassage,

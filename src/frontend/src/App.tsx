@@ -16,7 +16,8 @@ import TeacherDashboard from "@/components/TeacherDashboard";
 import { Toaster } from "@/components/ui/sonner";
 import { getPassageByGrade, hasMorePassages } from "@/data/content";
 import type { TeacherAccount } from "@/store/useAuthStore";
-import { useStudentStore } from "@/store/useStudentStore";
+import { findStudentProgress, useStudentStore } from "@/store/useStudentStore";
+import { getBadge } from "@/utils/badges";
 import { useState } from "react";
 
 type Screen =
@@ -39,6 +40,7 @@ export default function App() {
   const {
     student,
     createStudent,
+    restoreStudent,
     completeWithProficiency,
     addSession,
     advancePassage,
@@ -62,25 +64,24 @@ export default function App() {
   const currentOffset = student.passageOffsets?.[student.grade] ?? 0;
   const passage = getPassageByGrade(student.grade, currentOffset);
 
+  // Compute which activities are done for the current passage
+  const completedActivities = student.sessions
+    .filter((s) => s.passageId === passage.id)
+    .map((s) => s.activity);
+
   const handleStudentLogin = (
     _studentId: string,
     name: string,
     grade: number,
   ) => {
-    // Check if this student already has data with proficiency done
-    try {
-      const stored = localStorage.getItem("readwise_student");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.name === name && parsed.proficiencyDone) {
-          createStudent(name, grade);
-          setScreen("dashboard");
-          return;
-        }
-      }
-    } catch {}
-    // New student or proficiency not done - show proficiency test
+    const savedProgress = findStudentProgress(name);
+    if (savedProgress?.proficiencyDone) {
+      restoreStudent(savedProgress);
+      setScreen("dashboard");
+      return;
+    }
     setPendingStudentName(name);
+    createStudent(name, grade);
     setScreen("proficiency-test");
   };
 
@@ -121,17 +122,13 @@ export default function App() {
       passageTitle: passage.title,
       wordResults: recordingWordResults,
     });
-
+    // After quiz, always return to dashboard (not auto-advance)
+    setScreen("dashboard");
+    // Grade adaptation: if passed move up, if failed badly move down (handled by advancePassage inside store)
     if (passed) {
-      advancePassage(student.grade);
-      const newOffset = currentOffset + 1;
-      if (!hasMorePassages(student.grade, newOffset)) {
-        setScreen("completed");
-      } else {
-        setScreen("dashboard");
-      }
-    } else {
-      setScreen("dashboard");
+      // Check if all 5 activities are now done for this passage
+      // We just completed quiz, other activities might still be pending
+      // so just go back to dashboard to continue the sequence
     }
   };
 
@@ -143,9 +140,13 @@ export default function App() {
       activity: "missing-words",
       passageTitle: passage.title,
     });
+    setScreen("dashboard");
   };
 
-  const handleRecordComplete = (wordResults: WordResult[]) => {
+  const handleRecordComplete = (
+    wordResults: WordResult[],
+    insertions: string[],
+  ) => {
     setRecordingWordResults(wordResults);
     const correctCount = wordResults.filter(
       (w) => w.status === "correct",
@@ -161,7 +162,9 @@ export default function App() {
       activity: "record",
       passageTitle: passage.title,
       wordResults,
+      insertions,
     });
+    // Auto-advance to quiz after record (existing behavior)
     setScreen("quiz");
   };
 
@@ -173,6 +176,7 @@ export default function App() {
       activity: "pronunciation",
       passageTitle: passage.title,
     });
+    setScreen("dashboard");
   };
 
   const handleIntonationComplete = () => {
@@ -183,6 +187,32 @@ export default function App() {
       activity: "intonation",
       passageTitle: passage.title,
     });
+    // After intonation (last activity), check if all 5 are done → advance passage
+    const allActivityIds = [
+      "record",
+      "quiz",
+      "missing-words",
+      "pronunciation",
+      "intonation",
+    ];
+    const doneAfterIntonation = [
+      ...completedActivities.filter((a) => a !== "intonation"),
+      "intonation",
+    ];
+    const allDone = allActivityIds.every((a) =>
+      doneAfterIntonation.includes(a),
+    );
+    if (allDone) {
+      advancePassage(student.grade);
+      const newOffset = currentOffset + 1;
+      if (!hasMorePassages(student.grade, newOffset)) {
+        setScreen("completed");
+      } else {
+        setScreen("dashboard");
+      }
+    } else {
+      setScreen("dashboard");
+    }
   };
 
   const handleReset = () => {
@@ -249,18 +279,18 @@ export default function App() {
   if (screen === "completed") {
     return (
       <>
-        <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-teal-50 to-cyan-50">
           <AppHeader />
           <div className="flex-1 flex flex-col items-center justify-center p-6">
             <div className="text-center max-w-md">
               <div className="text-6xl mb-6">🎉</div>
-              <h2 className="text-2xl font-bold text-green-700 mb-4">
+              <h2 className="text-2xl font-bold text-teal-700 mb-4">
                 Amazing Work, {student.name}!
               </h2>
               <p className="text-gray-700 text-lg mb-6">
                 You have completed all passages for{" "}
-                <span className="font-semibold text-green-700">
-                  Grade {student.grade}
+                <span className="font-semibold text-teal-700">
+                  {getBadge(student.grade).emoji} {getBadge(student.grade).name}
                 </span>
                 ! 🎉
               </p>
@@ -272,7 +302,7 @@ export default function App() {
                 type="button"
                 data-ocid="completed.primary_button"
                 onClick={handleBackToHome}
-                className="bg-green-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-green-700 transition-colors text-lg"
+                className="bg-teal-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-teal-700 transition-colors text-lg"
               >
                 Back to Home
               </button>
@@ -362,6 +392,8 @@ export default function App() {
       student={student}
       onNavigate={(s) => setScreen(s as Screen)}
       onBackToHome={handleBackToHome}
+      completedActivities={completedActivities}
+      currentPassageTitle={passage.title}
     />
   );
 }

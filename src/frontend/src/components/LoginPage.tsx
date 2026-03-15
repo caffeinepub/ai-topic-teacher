@@ -81,63 +81,93 @@ export default function LoginPage({
       emoji: "🎒",
       label: "Student",
       sub: "Start learning!",
-      color: "amber",
+      color: "teal",
     },
     {
       key: "teacher" as const,
       emoji: "🏫",
       label: "Teacher",
       sub: "Manage students",
-      color: "blue",
+      color: "cyan",
     },
     {
       key: "admin" as const,
       emoji: "🔐",
       label: "Super Admin",
       sub: "Manage system",
-      color: "purple",
+      color: "indigo",
     },
   ];
 
   const colorMap = {
-    amber: {
-      active: "bg-amber-500 border-amber-600 text-white shadow-amber-200",
+    teal: {
+      active: "bg-teal-500 border-teal-600 text-white shadow-teal-200",
       inactive:
-        "bg-white border-amber-200 text-amber-800 hover:border-amber-400",
-      sub_active: "text-amber-100",
-      sub_inactive: "text-amber-500",
+        "bg-white border-teal-200 text-teal-800 hover:border-teal-400 hover:bg-teal-50",
+      sub_active: "text-teal-100",
+      sub_inactive: "text-teal-500",
+      input: "border-teal-200 focus:border-teal-400",
+      btn: "bg-teal-500 hover:bg-teal-600",
+      card: "border-teal-100",
     },
-    blue: {
-      active: "bg-blue-600 border-blue-700 text-white shadow-blue-200",
-      inactive: "bg-white border-blue-200 text-blue-800 hover:border-blue-400",
-      sub_active: "text-blue-100",
-      sub_inactive: "text-blue-500",
-    },
-    purple: {
-      active: "bg-purple-600 border-purple-700 text-white shadow-purple-200",
+    cyan: {
+      active: "bg-cyan-500 border-cyan-600 text-white shadow-cyan-200",
       inactive:
-        "bg-white border-purple-200 text-purple-800 hover:border-purple-400",
-      sub_active: "text-purple-100",
-      sub_inactive: "text-purple-500",
+        "bg-white border-cyan-200 text-cyan-800 hover:border-cyan-400 hover:bg-cyan-50",
+      sub_active: "text-cyan-100",
+      sub_inactive: "text-cyan-500",
+      input: "border-cyan-200 focus:border-cyan-400",
+      btn: "bg-cyan-600 hover:bg-cyan-700",
+      card: "border-cyan-100",
+    },
+    indigo: {
+      active: "bg-indigo-600 border-indigo-700 text-white shadow-indigo-200",
+      inactive:
+        "bg-white border-indigo-200 text-indigo-800 hover:border-indigo-400 hover:bg-indigo-50",
+      sub_active: "text-indigo-100",
+      sub_inactive: "text-indigo-500",
+      input: "border-indigo-200 focus:border-indigo-400",
+      btn: "bg-indigo-600 hover:bg-indigo-700",
+      card: "border-indigo-100",
     },
   };
 
   return (
-    <div className="min-h-screen bg-amber-50 flex flex-col">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        background:
+          "linear-gradient(135deg, #0d9488 0%, #0891b2 50%, #0e7490 100%)",
+      }}
+    >
+      {/* Decorative circles */}
+      <div
+        className="absolute top-0 left-0 w-64 h-64 rounded-full opacity-10 bg-white"
+        style={{ transform: "translate(-40%, -40%)" }}
+      />
+      <div
+        className="absolute bottom-0 right-0 w-96 h-96 rounded-full opacity-10 bg-white"
+        style={{ transform: "translate(30%, 30%)" }}
+      />
+
       <AppHeader />
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
+
+      <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="w-full max-w-md"
         >
+          {/* Hero text */}
           <div className="text-center mb-8">
             <div className="text-5xl mb-3">📚</div>
-            <h2 className="text-2xl font-bold text-amber-800">
+            <h2 className="text-3xl font-extrabold text-white tracking-tight drop-shadow">
               Welcome to Classio!
             </h2>
-            <p className="text-amber-600 mt-1">Who are you today?</p>
+            <p className="text-cyan-100 mt-2 text-lg font-semibold tracking-widest uppercase">
+              Learn and Lead
+            </p>
           </div>
 
           {/* Role selector */}
@@ -150,10 +180,10 @@ export default function LoginPage({
                   key={role.key}
                   type="button"
                   data-ocid={`login.${role.key}.tab`}
-                  whileHover={{ scale: 1.03 }}
+                  whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setSelected(role.key)}
-                  className={`rounded-3xl p-4 flex flex-col items-center gap-2 border-2 transition-all shadow-md ${
+                  className={`rounded-3xl p-4 flex flex-col items-center gap-2 border-2 transition-all shadow-lg ${
                     isActive ? c.active : c.inactive
                   }`}
                 >
@@ -177,11 +207,15 @@ export default function LoginPage({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.25 }}
-                className="bg-white rounded-3xl shadow-lg p-6 space-y-4 border border-amber-100"
+                className="bg-white rounded-3xl shadow-xl p-6 space-y-4 border border-teal-100"
               >
-                <p className="font-semibold text-gray-700">Student Login</p>
+                <p className="font-semibold text-teal-700 flex items-center gap-2">
+                  <span>🎒</span> Student Login
+                </p>
                 <div className="space-y-1">
-                  <Label htmlFor="stu-id">Student ID</Label>
+                  <Label htmlFor="stu-id" className="text-teal-700">
+                    Student ID
+                  </Label>
                   <Input
                     id="stu-id"
                     data-ocid="login.student.input"
@@ -191,12 +225,14 @@ export default function LoginPage({
                       setStuId(e.target.value);
                       setStuError("");
                     }}
-                    className="h-11 rounded-xl border-amber-200 focus:border-amber-400"
+                    className="h-11 rounded-xl border-teal-200 focus:border-teal-400 focus:ring-teal-200"
                     autoFocus
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="stu-contact">Contact Number</Label>
+                  <Label htmlFor="stu-contact" className="text-teal-700">
+                    Contact Number
+                  </Label>
                   <Input
                     id="stu-contact"
                     data-ocid="login.student.contact.input"
@@ -206,11 +242,13 @@ export default function LoginPage({
                       setStuContact(e.target.value);
                       setStuError("");
                     }}
-                    className="h-11 rounded-xl border-amber-200 focus:border-amber-400"
+                    className="h-11 rounded-xl border-teal-200 focus:border-teal-400"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="stu-pass">Password</Label>
+                  <Label htmlFor="stu-pass" className="text-teal-700">
+                    Password
+                  </Label>
                   <Input
                     id="stu-pass"
                     data-ocid="login.student.password.input"
@@ -224,7 +262,7 @@ export default function LoginPage({
                     onKeyDown={(e) =>
                       e.key === "Enter" && handleStudentSubmit()
                     }
-                    className="h-11 rounded-xl border-amber-200 focus:border-amber-400"
+                    className="h-11 rounded-xl border-teal-200 focus:border-teal-400"
                   />
                 </div>
                 <AnimatePresence>
@@ -243,7 +281,7 @@ export default function LoginPage({
                 <Button
                   data-ocid="login.student.submit_button"
                   onClick={handleStudentSubmit}
-                  className="w-full h-12 text-base rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+                  className="w-full h-12 text-base rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-semibold"
                 >
                   Start Learning 🎓
                 </Button>
@@ -257,11 +295,15 @@ export default function LoginPage({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.25 }}
-                className="bg-white rounded-3xl shadow-lg p-6 space-y-4 border border-blue-100"
+                className="bg-white rounded-3xl shadow-xl p-6 space-y-4 border border-cyan-100"
               >
-                <p className="font-semibold text-gray-700">Teacher Login</p>
+                <p className="font-semibold text-cyan-700 flex items-center gap-2">
+                  <span>🏫</span> Teacher Login
+                </p>
                 <div className="space-y-1">
-                  <Label htmlFor="tch-id">Teacher ID</Label>
+                  <Label htmlFor="tch-id" className="text-cyan-700">
+                    Teacher ID
+                  </Label>
                   <Input
                     id="tch-id"
                     data-ocid="login.teacher.input"
@@ -271,12 +313,14 @@ export default function LoginPage({
                       setTchId(e.target.value);
                       setTchError("");
                     }}
-                    className="h-11 rounded-xl border-blue-200 focus:border-blue-400"
+                    className="h-11 rounded-xl border-cyan-200 focus:border-cyan-400"
                     autoFocus
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="tch-pass">Password</Label>
+                  <Label htmlFor="tch-pass" className="text-cyan-700">
+                    Password
+                  </Label>
                   <Input
                     id="tch-pass"
                     data-ocid="login.teacher.password.input"
@@ -290,7 +334,7 @@ export default function LoginPage({
                     onKeyDown={(e) =>
                       e.key === "Enter" && handleTeacherSubmit()
                     }
-                    className="h-11 rounded-xl border-blue-200 focus:border-blue-400"
+                    className="h-11 rounded-xl border-cyan-200 focus:border-cyan-400"
                   />
                 </div>
                 <AnimatePresence>
@@ -309,7 +353,7 @@ export default function LoginPage({
                 <Button
                   data-ocid="login.teacher.submit_button"
                   onClick={handleTeacherSubmit}
-                  className="w-full h-12 text-base rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                  className="w-full h-12 text-base rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-semibold"
                 >
                   Enter Dashboard 🏫
                 </Button>
@@ -323,11 +367,15 @@ export default function LoginPage({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.25 }}
-                className="bg-white rounded-3xl shadow-lg p-6 space-y-4 border border-purple-100"
+                className="bg-white rounded-3xl shadow-xl p-6 space-y-4 border border-indigo-100"
               >
-                <p className="font-semibold text-gray-700">Super Admin Login</p>
+                <p className="font-semibold text-indigo-700 flex items-center gap-2">
+                  <span>🔐</span> Super Admin Login
+                </p>
                 <div className="space-y-1">
-                  <Label htmlFor="admin-user">Username</Label>
+                  <Label htmlFor="admin-user" className="text-indigo-700">
+                    Username
+                  </Label>
                   <Input
                     id="admin-user"
                     data-ocid="login.admin.input"
@@ -337,12 +385,14 @@ export default function LoginPage({
                       setAdminUser(e.target.value);
                       setAdminError("");
                     }}
-                    className="h-11 rounded-xl border-purple-200 focus:border-purple-400"
+                    className="h-11 rounded-xl border-indigo-200 focus:border-indigo-400"
                     autoFocus
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="admin-pass">Password</Label>
+                  <Label htmlFor="admin-pass" className="text-indigo-700">
+                    Password
+                  </Label>
                   <Input
                     id="admin-pass"
                     data-ocid="login.admin.password.input"
@@ -354,7 +404,7 @@ export default function LoginPage({
                       setAdminError("");
                     }}
                     onKeyDown={(e) => e.key === "Enter" && handleAdminSubmit()}
-                    className="h-11 rounded-xl border-purple-200 focus:border-purple-400"
+                    className="h-11 rounded-xl border-indigo-200 focus:border-indigo-400"
                   />
                 </div>
                 <AnimatePresence>
@@ -373,7 +423,7 @@ export default function LoginPage({
                 <Button
                   data-ocid="login.admin.submit_button"
                   onClick={handleAdminSubmit}
-                  className="w-full h-12 text-base rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                  className="w-full h-12 text-base rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
                 >
                   Enter Admin Panel 🔐
                 </Button>

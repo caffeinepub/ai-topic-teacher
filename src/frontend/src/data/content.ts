@@ -211,7 +211,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "I have a cat. Her name is Mia. She is soft and small. Mia likes to sleep. I love my cat.",
+      "A family is a group of people who love and care for each other. My family has my father, my mother, and my sister. We live in a small house. Father goes to work every morning. Mother cooks food for us. We eat together every evening. A family helps and supports each other. I love my family.",
   },
 
   // ── GRADE 1 – Passage B ─────────────────────────────────────────────────
@@ -377,7 +377,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "The sun is big. It shines in the sky. The sun gives us light. Plants need the sun. We all like the sun.",
+      "The sun rises every morning in the east. It gives us light and warmth. Plants need sunlight to grow green and tall. Without the sun, there would be no life on Earth. Animals and people also need the sun. The sun sets in the evening in the west. At night the sky becomes dark. The sun is very important for all living things.",
   },
 
   // ── GRADE 2 – Passage A ─────────────────────────────────────────────────
@@ -561,7 +561,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "Maya has a small garden at her house. She plants seeds in the soil each spring. The seeds grow into flowers when they get water and sunlight. Maya waters her flowers every morning before school. She is very happy with her garden.",
+      "We need food to stay healthy and strong. Rice, bread, and chapati give us energy to work and play. Fruits and vegetables keep us fit and free from illness. Milk and eggs make our bones and teeth strong. Farmers grow food for all of us with hard work. We should eat fresh and healthy food every day. We must never waste food. Let us thank the farmers who feed us all.",
   },
 
   // ── GRADE 2 – Passage B ─────────────────────────────────────────────────
@@ -737,7 +737,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "One day, dark clouds filled the sky and it started to rain. Tom and his sister Lily stayed inside. They looked out the window at the rain. Tom made hot cocoa to drink. Lily read her favourite book. When the rain stopped, a bright rainbow came out in the sky.",
+      "Water is very important for all living things on Earth. We drink water every day to stay alive. Plants need water to grow and make food. Animals also drink water to live. Rain brings fresh water to the earth from the clouds. Rivers, lakes, and ponds are sources of water. We should not waste water at all. Clean water keeps us healthy and prevents diseases.",
   },
 
   // ── GRADE 3 – Passage A ─────────────────────────────────────────────────
@@ -939,7 +939,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "An old lighthouse stood on a cliff by the sea. It helped ships stay safe. The bright light shone all night. Ships could see the light from far away. One stormy night, the light went out. The keeper quickly fixed it and saved a ship.",
+      "Plants are very useful to us in many ways. We get fruits and vegetables to eat from plants. Cotton plants give us cotton to make our clothes. Trees give us wood to build houses and make furniture. Plants also clean the air we breathe by taking in carbon dioxide. The roots of plants hold the soil together and prevent erosion. We should plant more trees every year. Trees are a precious gift of nature and we must protect them.",
   },
 
   // ── GRADE 3 – Passage B ─────────────────────────────────────────────────
@@ -1129,7 +1129,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "The fennec fox is a small animal. It lives in the desert. The desert is very hot in the day. So the fox sleeps in the ground to keep cool. At night it comes out to find food. Its big ears help it hear well and stay cool.",
+      "We live on a planet called Earth. Earth is round in shape like a ball. It has both land and water on its surface. The large areas of land are called continents. Asia, Africa, Europe, and America are the main continents of the world. The large bodies of salt water are called oceans. The Pacific is the largest and the deepest ocean. Earth is the only planet in our solar system known to have life.",
   },
 
   // ── GRADE 4 – Passage A ─────────────────────────────────────────────────
@@ -1324,7 +1324,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "Water moves around the Earth all the time. The sun heats water in rivers and lakes. The water turns into steam and goes up into the sky. It cools and becomes clouds. When clouds get heavy, rain falls down. The water flows back to rivers and the cycle starts again. All living things need water to live.",
+      "Long ago, people lived in caves and forests. They did not know how to grow food. They hunted wild animals and collected fruits and roots to eat. They made sharp tools from stones to help them hunt. Fire was one of their greatest discoveries. Fire gave them warmth and helped them cook food. Over thousands of years, people learned to grow crops and keep animals. They built villages and settled down together. This was the beginning of human civilization.",
   },
 
   // ── GRADE 4 – Passage B ─────────────────────────────────────────────────
@@ -1524,7 +1524,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "A volcano is a hole in the ground where hot rock comes out. Deep inside the Earth, rock gets so hot that it melts. This melted rock is called magma. When it comes out of the ground, we call it lava. Lava flows down the side of the volcano. Over time, volcanoes can make new land. Scientists study volcanoes to stay safe.",
+      "The human body is made up of many organs that work together. The brain controls all our actions, thoughts, and feelings. The heart pumps blood to every part of the body through blood vessels. The lungs help us breathe in oxygen and breathe out carbon dioxide. The stomach digests the food we eat and gives us energy. Our bones support the body and protect the delicate organs inside. Muscles help us move and do all our work. We should eat a balanced diet and exercise daily to keep our body healthy and strong.",
   },
 
   // ── GRADE 5 – Passage A ─────────────────────────────────────────────────
@@ -1737,7 +1737,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "The Amazon rainforest is the biggest forest in the world. It is in South America. Many animals and plants live there. The trees take in bad air and give out clean air. This helps the whole Earth stay healthy. But people are cutting down many trees. This is a big problem. We must protect the Amazon forest.",
+      "India won its freedom from British rule on the fifteenth of August nineteen forty-seven. Many brave men and women sacrificed their lives for this freedom. Mahatma Gandhi led the non-violent freedom struggle and inspired millions of people. Jawaharlal Nehru became the first Prime Minister of independent India. Bhagat Singh gave his life for the nation at a very young age and became a great hero. Subhas Chandra Bose formed the Indian National Army to fight the British. Rani Lakshmibai fought fearlessly against the British in eighteen fifty-seven. We remember all these heroes with deep respect and pride every day.",
   },
 
   // ── GRADE 5 – Passage B ─────────────────────────────────────────────────
@@ -1950,7 +1950,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "Every day we make many choices. Some choices are small, like what to eat. Some choices are big and can change our life. We do not always think about all the facts before we choose. Sometimes we use quick thinking to decide fast. This can lead to mistakes. We can also miss facts that do not match what we already think. It is good to slow down and think before making big choices.",
+      "An ecosystem is a community of living things sharing the same environment and depending on each other. A forest ecosystem has trees, shrubs, animals, insects, birds, and many tiny organisms. The green plants make food using sunlight through the process of photosynthesis. Plant-eating animals feed on the plants and meat-eating animals feed on other animals. When plants and animals die, tiny organisms break them down and return nutrients to the soil. This great cycle of life continues forever in nature. Human beings are also part of ecosystems. We must protect our ecosystems from the damage caused by pollution and deforestation.",
   },
   // ─── GRADE 1 C: My Red Ball ───────────────────────────────────────────────
   {
@@ -2133,7 +2133,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "I have a red ball. It is big and round. I kick the ball. It goes up high. I catch the ball. The ball is fun to play with.",
+      "A school is where we go to learn. Our school has classrooms, a library, and a playground. Our teacher helps us read and write. We learn numbers and new words in school every day. We make many friends at school. We play together during the lunch break. School helps us grow and become wise. I love going to school.",
   },
 
   // ─── GRADE 1 D: A Rainy Day ───────────────────────────────────────────────
@@ -2308,7 +2308,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "Rain falls from the sky. I wear my yellow coat. I put on my boots. I jump in the puddles. Splash! I love the rain.",
+      "There are many animals around us. Some animals live in our homes as pets. A dog is a faithful and loyal pet. A cow gives us milk to drink. Birds make nests in trees and sing sweet songs. Fish live in rivers, ponds, and the sea. We must be kind to all animals. Animals are our friends and we should never hurt them.",
   },
 
   // ─── GRADE 2 C: The Garden ────────────────────────────────────────────────
@@ -2489,7 +2489,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "Our garden is full of flowers. Red roses grow by the fence. Yellow sunflowers reach up to the sun. Bees visit the flowers to collect nectar. We water the plants every morning so they stay healthy.",
+      "Many people help us in our daily life. The doctor treats sick people and makes them well. The police officer keeps us safe from danger. The farmer grows food for the whole country. The teacher helps us learn and understand the world. The postman brings letters and parcels to our door. We should respect and thank all our helpers. Their hard work makes our life easy and comfortable.",
   },
 
   // ─── GRADE 2 D: My Family ─────────────────────────────────────────────────
@@ -2680,7 +2680,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "My family has four people. My mum cooks delicious meals. My dad reads stories at bedtime. My little sister loves to draw pictures. We all help each other and spend time together on weekends.",
+      "Once there was a little bird who lived in a tall mango tree. Every morning she would sing a sweet and cheerful song. One day a strong wind blew and she fell to the ground. A kind boy found her lying there and gave her water to drink. He placed her back gently on a low branch. The bird slowly recovered and flew back to her nest. She sang her sweetest song for the kind boy. Kindness is always rewarded in the end.",
   },
 
   // ─── GRADE 3 C: The Ocean ─────────────────────────────────────────────────
@@ -2874,7 +2874,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "The ocean covers more than half of our planet. Many animals live in the ocean. Small creatures like plankton and big ones like blue whales live there. Coral reefs are like underwater gardens where fish live. We must take care of the ocean because it gives us food and air.",
+      "A map is a drawing of a place made on flat paper. Maps help us find our way and understand the world. A compass shows us the four main directions. They are North, South, East, and West. The sun rises in the East and sets in the West. Maps use symbols and colors to show different features. A key or legend explains what each symbol means. India is the seventh largest country in the world by area.",
   },
 
   // ─── GRADE 3 D: Seasons Change ────────────────────────────────────────────
@@ -3072,7 +3072,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "There are four seasons in a year. They are spring, summer, autumn, and winter. In spring, flowers come out and birds come back. Summer has long, sunny days. In autumn, the leaves turn red and fall. Winter is cold and sometimes it snows.",
+      "Once a poor farmer found a bag of gold coins lying on the road while walking home. He took the bag to the village chief right away. The chief announced to everyone that the farmer had found the lost gold. A rich merchant came forward saying the gold was his. He was greatly surprised by the farmer's honesty and goodness. The merchant gave half the gold coins to the farmer as a reward. The farmer became prosperous and was respected by all. Honesty is truly the best policy.",
   },
 
   // ─── GRADE 4 C: The Water Cycle ───────────────────────────────────────────
@@ -3283,7 +3283,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "Water moves around the Earth in a cycle. The sun heats water in oceans, lakes, and rivers. The water turns to steam and goes into the air. The steam cools and forms clouds. When clouds get heavy, rain or snow falls. The water flows back to rivers and oceans. Then the cycle starts all over again.",
+      "India is a large and beautiful country in South Asia. It has twenty-eight states and eight union territories. Each state has its own culture, language, food, and traditions. Rajasthan is the largest state and Goa is the smallest state. India has many great rivers like the Ganga, Yamuna, and Brahmaputra. The Himalayan mountains in the north are the highest in the world. India is home to many wild animals including tigers, elephants, and peacocks. India is known all over the world for its unity in diversity.",
   },
 
   // ─── GRADE 4 D: Ancient Egypt ─────────────────────────────────────────────
@@ -3489,7 +3489,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "Ancient Egypt was a great land long, long ago. People there built big pyramids. The pyramids were made for their kings, called pharaohs. The River Nile gave them water to grow food. They used pictures to write. These pictures are called hieroglyphics. Today, people dig in the ground to find old things from Egypt.",
+      "Once a poor boy named Manu found a magic paintbrush in an old forest. Whatever he painted with it came to life instantly. He painted food for the hungry and water for the thirsty villagers. A greedy king heard about the magic brush and wanted it for himself. He ordered Manu to paint him a mountain of gold. Manu painted a golden island far away in the middle of a stormy sea. The king sailed out to reach it on a small boat. The waves grew stronger and the king was never seen again. Greed leads only to destruction.",
   },
 
   // ─── GRADE 5 C: The Solar System ──────────────────────────────────────────
@@ -3688,7 +3688,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "Our solar system has the Sun and eight planets. The Sun is very big and gives us light and heat. The four planets near the Sun are made of rock. The four planets far from the Sun are made of gas. They are much bigger. Saturn has rings around it made of ice and rock. People who study space work hard to find out more about it.",
+      "Natural disasters are powerful events caused by forces of nature that cause great harm to people, animals, and the environment. Earthquakes happen when the layers of rock beneath the ground shift and shake suddenly. Floods occur when rivers overflow their banks after very heavy rainfall. Cyclones are violent storms with extremely strong winds and heavy rain that form over warm seas. Droughts happen when a region receives very little or no rainfall for a long time. Volcanic eruptions send hot lava and ash into the surrounding areas. We cannot stop natural disasters but we can prepare for them. Early warnings, safe buildings, and emergency shelters save many lives during disasters.",
   },
 
   // ─── GRADE 5 D: Rainforests ───────────────────────────────────────────────
@@ -3895,7 +3895,7 @@ export const passages: Passage[] = [
       },
     ],
     recordPassage:
-      "Rain forests are large, thick forests. More than half of all animals and plants in the world live in rain forests. The trees take in bad air and make clean air. The Amazon rain forest makes a lot of the clean air we all breathe. But people are cutting down the trees to make farms and build roads. This is harming the forests. We need to stop this and protect rain forests for all living things.",
+      "The river Ganga has given life to millions of people for thousands of years in India. Farmers use its water to grow wheat, rice, and sugarcane in the fertile plains. People bathe in its holy waters and consider it sacred. Ancient temples and ghats line its banks in the holy city of Varanasi. But today the great river is in danger from industrial pollution and household waste. Factory chemicals and plastic garbage are making its water unclean and harmful. Thousands of young volunteers are working hard to clean and protect the river. A clean and flowing Ganga will be our most precious gift to future generations.",
   },
 ];
 
