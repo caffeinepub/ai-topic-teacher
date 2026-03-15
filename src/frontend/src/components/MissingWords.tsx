@@ -8,8 +8,20 @@ interface Props {
   onBack: () => void;
 }
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export default function MissingWords({ passage, onComplete, onBack }: Props) {
   const { missingWords } = passage;
+  const [shuffledWordBank] = useState(() =>
+    shuffleArray(missingWords.wordBank),
+  );
   const [filled, setFilled] = useState<(string | null)[]>(
     Array(missingWords.answers.length).fill(null),
   );
@@ -148,7 +160,7 @@ export default function MissingWords({ passage, onComplete, onBack }: Props) {
               Word Bank:
             </p>
             <div className="flex flex-wrap gap-2">
-              {missingWords.wordBank.map((word) => (
+              {shuffledWordBank.map((word) => (
                 <button
                   key={word}
                   type="button"

@@ -5,6 +5,7 @@ import IntonationPractice from "@/components/IntonationPractice";
 import MissingWords from "@/components/MissingWords";
 import Onboarding from "@/components/Onboarding";
 import PassageReader from "@/components/PassageReader";
+import ProficiencyTest from "@/components/ProficiencyTest";
 import ProgressReport from "@/components/ProgressReport";
 import PronunciationPractice from "@/components/PronunciationPractice";
 import ReadAndRecord from "@/components/ReadAndRecord";
@@ -16,6 +17,7 @@ import { useState } from "react";
 
 type Screen =
   | "onboarding"
+  | "proficiency-test"
   | "dashboard"
   | "passage"
   | "quiz"
@@ -35,9 +37,12 @@ export default function App() {
     reset,
     averageScore,
   } = useStudentStore();
-  const [screen, setScreen] = useState<Screen>(
-    student.name ? "dashboard" : "onboarding",
-  );
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (!student.name) return "onboarding";
+    if (!student.proficiencyDone) return "proficiency-test";
+    return "dashboard";
+  });
+  const [pendingName, setPendingName] = useState("");
   const [recordingWordResults, setRecordingWordResults] = useState<
     WordResult[]
   >([]);
@@ -45,7 +50,12 @@ export default function App() {
   const currentOffset = student.passageOffsets?.[student.grade] ?? 0;
   const passage = getPassageByGrade(student.grade, currentOffset);
 
-  const handleOnboarding = (name: string, grade: number) => {
+  const handleOnboarding = (name: string) => {
+    setPendingName(name);
+    setScreen("proficiency-test");
+  };
+
+  const handleProficiencyComplete = (name: string, grade: number) => {
     createStudent(name, grade);
     setScreen("dashboard");
   };
@@ -139,6 +149,15 @@ export default function App() {
 
   if (screen === "onboarding") {
     return <Onboarding onComplete={handleOnboarding} />;
+  }
+
+  if (screen === "proficiency-test") {
+    return (
+      <ProficiencyTest
+        name={pendingName}
+        onComplete={handleProficiencyComplete}
+      />
+    );
   }
 
   if (screen === "completed") {

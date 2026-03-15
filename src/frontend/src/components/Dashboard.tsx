@@ -60,25 +60,25 @@ export default function Dashboard({
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-white/80 text-sm">Welcome back,</p>
-              <h2 className="font-display text-2xl font-bold">
+              <p className="text-white/80 text-base">Welcome back,</p>
+              <h2 className="font-display text-3xl font-bold">
                 {student.name}
               </h2>
             </div>
             <div className="bg-white/20 rounded-2xl px-4 py-2 text-right">
-              <p className="text-white/80 text-xs">Current Level</p>
-              <p className="text-white font-bold text-xl">
+              <p className="text-white/80 text-sm">Current Level</p>
+              <p className="text-white font-bold text-2xl">
                 Grade {student.grade}
               </p>
             </div>
           </div>
-          <div className="bg-white/20 rounded-full h-2 mt-2">
+          <div className="bg-white/20 rounded-full h-3 mt-2">
             <div
-              className="bg-white rounded-full h-2 transition-all"
+              className="bg-white rounded-full h-3 transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-white/70 text-xs mt-1">
+          <p className="text-white/70 text-sm mt-1">
             {totalSessions} activities completed
           </p>
         </div>
@@ -89,25 +89,29 @@ export default function Dashboard({
           type="button"
           data-ocid="dashboard.record.button"
           onClick={() => onNavigate(recordFeature.id)}
-          className={`w-full ${recordFeature.color} border-2 rounded-2xl p-4 text-left flex items-center gap-4 hover:scale-[1.01] transition-all`}
+          className={`w-full ${recordFeature.color} border-2 rounded-2xl p-5 text-left flex items-center gap-4 hover:scale-[1.01] transition-all`}
         >
-          <span className="text-3xl">{recordFeature.icon}</span>
+          <span className="text-4xl">{recordFeature.icon}</span>
           <div>
-            <p className={`font-bold ${gradeTextColors[student.grade]}`}>
+            <p
+              className={`font-bold text-lg ${gradeTextColors[student.grade]}`}
+            >
               {recordFeature.title}
             </p>
-            <p className="text-gray-500 text-sm">{recordFeature.desc}</p>
+            <p className="text-gray-500 text-base">{recordFeature.desc}</p>
           </div>
         </button>
 
         {student.badges.length > 0 && (
           <div className="bg-white rounded-2xl p-4 border border-amber-100">
-            <p className="font-semibold text-gray-700 mb-2">🏅 Your Badges</p>
+            <p className="font-semibold text-gray-700 text-lg mb-2">
+              🏅 Your Badges
+            </p>
             <div className="flex flex-wrap gap-2">
               {student.badges.map((b) => (
                 <span
                   key={b}
-                  className="bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full"
+                  className="bg-amber-100 text-amber-800 text-sm font-semibold px-3 py-1 rounded-full"
                 >
                   {b}
                 </span>
@@ -120,7 +124,7 @@ export default function Dashboard({
           data-ocid="dashboard.report.button"
           onClick={() => onNavigate("report")}
           variant="outline"
-          className="w-full rounded-xl border-amber-300 text-amber-700 hover:bg-amber-50"
+          className="w-full h-12 text-lg rounded-xl border-amber-300 text-amber-700 hover:bg-amber-50"
         >
           📊 View My Progress Report
         </Button>
@@ -129,7 +133,7 @@ export default function Dashboard({
           data-ocid="dashboard.back_home.button"
           onClick={onBackToHome}
           variant="outline"
-          className="w-full rounded-xl border-gray-300 text-gray-600 hover:bg-gray-50"
+          className="w-full h-12 text-lg rounded-xl border-gray-300 text-gray-600 hover:bg-gray-50"
         >
           🏠 Back to Home
         </Button>

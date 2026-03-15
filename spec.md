@@ -1,30 +1,46 @@
 # Classio
 
 ## Current State
-- ProgressReport shows only last 5 sessions under Recent Activity
-- Only quiz sessions have expandable Q&A; other activities show just a checkmark
-- Word results from Read & Record are not persisted to sessions
-- Paragraph advances correctly after a PASS
+- Onboarding screen: student enters name + picks grade manually, then goes to dashboard
+- Dashboard: shows only Read & Record module; other modules accessible via Progress Report
+- Progress Report: tabs for each activity, shows only latest session per activity
+- Student store: tracks sessions with wordResults (correct/mispronounced/missed)
+- No proficiency test exists; grade is chosen manually
 
 ## Requested Changes (Diff)
 
 ### Add
-- wordResults field to Session interface to persist reading analysis
-- Full report sections in ProgressReport grouped by activity type
-- Each section shows all attempts with detailed reports
+- **Proficiency Test** screen (shown once per new student, after entering name but before selecting grade)
+  - A short reading assessment: student reads a short passage aloud (speech recognition)
+  - Based on accuracy score, the system auto-assigns a starting grade (1-5)
+  - Show result: "Based on your reading, we suggest Grade X for you"
+  - Student can accept or manually override grade
+  - Store `proficiencyDone: boolean` in student data so test only shows once
+- **Adaptive Learning** enhancements in store
+  - Starting grade derived from proficiency test rather than manual selection
+  - Grade already adapts via quiz scores (existing logic kept)
+- **Comprehensive Detail Report** (single page, replacing the tab-based View My Reports)
+  - All activities shown on ONE scrollable page (no tabs)
+  - Sections: Overall Summary, Read & Record, Read & Quiz, Pronunciation, Missing Words, Intonation
+  - Read & Record section: accuracy %, mispronounced words list (orange), missed words list (red/strikethrough), correct count, full word-by-word breakdown
+  - Progress improvement chart: score over multiple sessions (line/bar showing improvement)
+  - Pronunciation section: words rated Good vs Needs Improvement
+  - Missing Words section: score summary
+  - Intonation section: completion summary
+  - Overall stats: total sessions, avg accuracy, improvement trend indicator
 
 ### Modify
-- handleRecordComplete in App.tsx to save wordResults to the session
-- ProgressReport to show all activities in sections with full details
-- Session storage to include wordResults
+- `Onboarding.tsx`: After name entry, launch proficiency test instead of manual grade selection
+- `useStudentStore.ts`: Add `proficiencyDone: boolean` field to StudentData; `createStudent` accepts grade from test
+- `ProgressReport.tsx`: Replace tabbed "View My Reports" with single comprehensive report page that shows all activities
+- `App.tsx`: Add `proficiency-test` screen to Screen type; wire flow
 
 ### Remove
-- Generic checkmark display for non-quiz sessions (replaced by proper reports)
+- Manual grade picker from Onboarding (replaced by proficiency test auto-assignment with optional override)
 
 ## Implementation Plan
-1. Add wordResults to Session interface
-2. Save wordResults in addSession call from handleRecordComplete
-3. Rewrite ProgressReport with sections per activity type showing full details
-4. Read & Quiz: pass/fail, score%, expandable Q&A
-5. Read & Record: accuracy%, word counts, color-coded word breakdown
-6. Missing Words/Pronunciation/Intonation: completion with score
+1. Create `ProficiencyTest.tsx` component: shows a grade-1 reading passage, records voice, analyzes accuracy, recommends grade (1-5 scale based on score), allows override, calls onComplete(grade)
+2. Update `useStudentStore.ts`: add `proficiencyDone` field, update defaultStudent and createStudent
+3. Update `Onboarding.tsx`: collect name only, then pass to proficiency test
+4. Update `App.tsx`: add `proficiency-test` screen, route name-entry → proficiency test → dashboard
+5. Update `ProgressReport.tsx`: replace tabbed reports with a single comprehensive all-activities report page including word breakdown, improvement trend, mispronounced/missed word lists

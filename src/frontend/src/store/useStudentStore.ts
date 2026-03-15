@@ -31,6 +31,7 @@ export interface StudentData {
   streak: number;
   lastActivity: number;
   passageOffsets: Record<number, number>;
+  proficiencyDone: boolean;
 }
 
 const STORAGE_KEY = "readwise_student";
@@ -43,6 +44,7 @@ const defaultStudent: StudentData = {
   streak: 1,
   lastActivity: 0,
   passageOffsets: {},
+  proficiencyDone: false,
 };
 
 export function useStudentStore() {
@@ -52,6 +54,7 @@ export function useStudentStore() {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (!parsed.passageOffsets) parsed.passageOffsets = {};
+        if (parsed.proficiencyDone === undefined) parsed.proficiencyDone = true;
         return parsed;
       }
       return defaultStudent;
@@ -66,7 +69,13 @@ export function useStudentStore() {
   };
 
   const createStudent = (name: string, grade: number) => {
-    save({ ...defaultStudent, name, grade, lastActivity: Date.now() });
+    save({
+      ...defaultStudent,
+      name,
+      grade,
+      lastActivity: Date.now(),
+      proficiencyDone: true,
+    });
   };
 
   const advancePassage = (grade: number) => {
