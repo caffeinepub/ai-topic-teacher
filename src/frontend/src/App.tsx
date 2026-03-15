@@ -8,7 +8,7 @@ import ProgressReport from "@/components/ProgressReport";
 import PronunciationPractice from "@/components/PronunciationPractice";
 import ReadAndRecord from "@/components/ReadAndRecord";
 import { Toaster } from "@/components/ui/sonner";
-import { getPassageByGrade } from "@/data/content";
+import { getPassageByGrade, hasMorePassages } from "@/data/content";
 import { useStudentStore } from "@/store/useStudentStore";
 import { useState } from "react";
 
@@ -21,7 +21,8 @@ type Screen =
   | "pronunciation"
   | "record"
   | "intonation"
-  | "report";
+  | "report"
+  | "completed";
 
 export default function App() {
   const {
@@ -53,6 +54,12 @@ export default function App() {
     });
     if (passed) {
       advancePassage(student.grade);
+      const newOffset = currentOffset + 1;
+      if (!hasMorePassages(student.grade, newOffset)) {
+        setScreen("completed");
+      } else {
+        setScreen("dashboard");
+      }
     }
   };
 
@@ -103,6 +110,42 @@ export default function App() {
 
   if (screen === "onboarding") {
     return <Onboarding onComplete={handleOnboarding} />;
+  }
+
+  if (screen === "completed") {
+    return (
+      <>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-6">
+          <div className="text-center max-w-md">
+            <div className="text-6xl mb-6">🎉</div>
+            <h1 className="text-3xl font-bold text-black mb-2">Classio</h1>
+            <h2 className="text-2xl font-bold text-green-700 mb-4">
+              Amazing Work, {student.name}!
+            </h2>
+            <p className="text-gray-700 text-lg mb-6">
+              You have completed all passages for{" "}
+              <span className="font-semibold text-green-700">
+                Grade {student.grade}
+              </span>
+              ! 🎉
+            </p>
+            <p className="text-gray-500 mb-8">
+              You read every passage and passed all the quizzes. That&apos;s a
+              fantastic achievement!
+            </p>
+            <button
+              type="button"
+              data-ocid="completed.primary_button"
+              onClick={handleBackToHome}
+              className="bg-green-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-green-700 transition-colors text-lg"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
+        <Toaster />
+      </>
+    );
   }
 
   if (screen === "passage") {
