@@ -45,7 +45,7 @@ function analyzeTranscript(passage: string, transcript: string): WordResult[] {
     .filter(Boolean);
 
   const results: WordResult[] = [];
-  let hi = 0; // pointer into heardWords
+  let hi = 0;
 
   for (let pi = 0; pi < passageWords.length; pi++) {
     const expected = normalize(passageWords[pi]);
@@ -55,7 +55,6 @@ function analyzeTranscript(passage: string, transcript: string): WordResult[] {
     }
 
     if (hi >= heardWords.length) {
-      // ran out of heard words – rest are missed
       results.push({ original: passageWords[pi], status: "missed" });
       continue;
     }
@@ -64,11 +63,9 @@ function analyzeTranscript(passage: string, transcript: string): WordResult[] {
       results.push({ original: passageWords[pi], status: "correct" });
       hi++;
     } else {
-      // look ahead up to 3 words in case of insertion
       let foundAhead = false;
       for (let look = 1; look <= 3 && hi + look < heardWords.length; look++) {
         if (heardWords[hi + look] === expected) {
-          // words before it were extras (insertions) – skip them
           hi += look;
           results.push({ original: passageWords[pi], status: "correct" });
           hi++;
@@ -77,12 +74,10 @@ function analyzeTranscript(passage: string, transcript: string): WordResult[] {
         }
       }
       if (!foundAhead) {
-        // check if heard word sounds like a skip (next passage word matches)
         const nextExpected = passageWords[pi + 1]
           ? normalize(passageWords[pi + 1])
           : "";
         if (heardWords[hi] === nextExpected) {
-          // current passage word was missed
           results.push({ original: passageWords[pi], status: "missed" });
         } else {
           results.push({
@@ -169,7 +164,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
       };
       mediaRecorder.current.start();
 
-      // Start speech recognition
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SR) {
         recognition.current = new SR() as SpeechRecognitionInstance;
@@ -188,9 +182,7 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
           liveTranscript.current = final;
           setTranscript(final.trim());
         };
-        recognition.current.onerror = () => {
-          // silently ignore recognition errors
-        };
+        recognition.current.onerror = () => {};
         recognition.current.start();
       }
 
@@ -222,7 +214,12 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-md mx-auto">
-        <div className="bg-rose-500 text-white px-4 pt-10 pb-6">
+        <div className="w-full bg-white border-b border-gray-100 py-3 px-4 text-center">
+          <span className="text-2xl font-extrabold text-black tracking-widest">
+            CLASSIO
+          </span>
+        </div>
+        <div className="bg-rose-500 text-white px-4 pt-6 pb-6">
           <button
             type="button"
             data-ocid="record.back.button"
@@ -238,7 +235,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
         </div>
 
         <div className="p-4 space-y-6">
-          {/* Passage */}
           <div className="bg-amber-50 rounded-2xl p-4">
             <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">
               Read this aloud:
@@ -248,7 +244,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
             </p>
           </div>
 
-          {/* Record button */}
           <div className="flex justify-center">
             <button
               type="button"
@@ -267,7 +262,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
             </button>
           </div>
 
-          {/* Live transcript while recording */}
           {recording && transcript && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
               <p className="text-blue-500 text-xs font-semibold uppercase mb-1">
@@ -294,10 +288,8 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
             </div>
           )}
 
-          {/* Results after recording */}
           {audioURL && (
             <div className="space-y-4">
-              {/* Playback */}
               <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
                 <p className="text-green-800 font-semibold text-sm mb-2">
                   ✓ Recording done! Play it back:
@@ -311,14 +303,12 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                 />
               </div>
 
-              {/* Analysis */}
               {analysis && analysis.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
                   <h3 className="font-bold text-gray-800 text-base">
                     📊 Your Reading Analysis
                   </h3>
 
-                  {/* Score summary */}
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="bg-green-50 rounded-xl p-3">
                       <div className="text-2xl font-bold text-green-600">
@@ -346,7 +336,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                     </div>
                   </div>
 
-                  {/* Word-by-word highlight */}
                   <div>
                     <p className="text-gray-500 text-xs font-semibold uppercase mb-2">
                       Word-by-word breakdown:
@@ -402,7 +391,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                 </div>
               )}
 
-              {/* No speech detected */}
               {transcript === "" && speechSupported && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-yellow-800 text-sm">
                   No speech detected. Make sure your microphone is working and
@@ -410,7 +398,6 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                 </div>
               )}
 
-              {/* Self-rating */}
               <div className="bg-white border border-gray-200 rounded-2xl p-4">
                 <p className="text-gray-600 text-sm font-semibold mb-2">
                   How did it go?

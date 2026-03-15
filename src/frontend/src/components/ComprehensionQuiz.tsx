@@ -63,91 +63,99 @@ export default function ComprehensionQuiz({
     const { correct, score, passed } = resultData;
 
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <div className="text-6xl mb-4">
-            {passed ? (score >= 80 ? "🎉" : "👍") : "💪"}
-          </div>
-          <h2 className="font-display text-3xl font-bold text-gray-800 mb-2">
-            Quiz Complete!
-          </h2>
-          <div className="text-5xl font-bold text-blue-600 mb-2">{score}%</div>
-          <p className="text-gray-600 mb-4">
-            {correct} out of {total} correct
-          </p>
+      <div className="min-h-screen bg-white flex flex-col">
+        <div className="w-full bg-white border-b border-gray-100 py-3 px-4 text-center">
+          <span className="text-2xl font-extrabold text-black tracking-widest">
+            CLASSIO
+          </span>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="max-w-md w-full text-center">
+            <div className="text-6xl mb-4">
+              {passed ? (score >= 80 ? "🎉" : "👍") : "💪"}
+            </div>
+            <h2 className="font-display text-3xl font-bold text-gray-800 mb-2">
+              Quiz Complete!
+            </h2>
+            <div className="text-5xl font-bold text-blue-600 mb-2">
+              {score}%
+            </div>
+            <p className="text-gray-600 mb-4">
+              {correct} out of {total} correct
+            </p>
 
-          {/* PASS / FAIL badge */}
-          <div className="flex justify-center mb-6">
-            {passed ? (
-              <span
-                data-ocid="quiz.success_state"
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-green-500 text-white text-2xl font-extrabold tracking-widest shadow-lg"
-              >
-                ✅ PASS
-              </span>
-            ) : (
-              <span
-                data-ocid="quiz.error_state"
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-red-500 text-white text-2xl font-extrabold tracking-widest shadow-lg"
-              >
-                ❌ FAIL
-              </span>
-            )}
-          </div>
+            <div className="flex justify-center mb-6">
+              {passed ? (
+                <span
+                  data-ocid="quiz.success_state"
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-green-500 text-white text-2xl font-extrabold tracking-widest shadow-lg"
+                >
+                  ✅ PASS
+                </span>
+              ) : (
+                <span
+                  data-ocid="quiz.error_state"
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-red-500 text-white text-2xl font-extrabold tracking-widest shadow-lg"
+                >
+                  ❌ FAIL
+                </span>
+              )}
+            </div>
 
-          <div
-            className={`rounded-2xl p-4 mb-6 ${
-              passed
-                ? score >= 80
-                  ? "bg-green-50 border border-green-200"
-                  : "bg-yellow-50 border border-yellow-200"
-                : "bg-rose-50 border border-rose-200"
-            }`}
-          >
-            <p
-              className={`font-semibold ${
+            <div
+              className={`rounded-2xl p-4 mb-6 ${
                 passed
                   ? score >= 80
-                    ? "text-green-700"
-                    : "text-yellow-700"
-                  : "text-rose-700"
+                    ? "bg-green-50 border border-green-200"
+                    : "bg-yellow-50 border border-yellow-200"
+                  : "bg-rose-50 border border-rose-200"
               }`}
             >
-              {passed
-                ? score >= 80
-                  ? "🌟 Amazing! You're moving up a level!"
-                  : "📚 Good effort! Keep practicing at this level."
-                : "🔄 Don't give up! Try the same passage again."}
-            </p>
-          </div>
-
-          {passed ? (
-            <Button
-              data-ocid="quiz.done.button"
-              onClick={onBack}
-              className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-lg"
-            >
-              Next Passage →
-            </Button>
-          ) : (
-            <div className="space-y-3">
-              <Button
-                data-ocid="quiz.retry.button"
-                onClick={handleRetry}
-                className="w-full h-12 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-lg"
+              <p
+                className={`font-semibold ${
+                  passed
+                    ? score >= 80
+                      ? "text-green-700"
+                      : "text-yellow-700"
+                    : "text-rose-700"
+                }`}
               >
-                Try Again 🔁
-              </Button>
+                {passed
+                  ? score >= 80
+                    ? "🌟 Amazing! You're moving up a level!"
+                    : "📚 Good effort! Keep practicing at this level."
+                  : "🔄 Don't give up! Try the same passage again."}
+              </p>
+            </div>
+
+            {passed ? (
               <Button
                 data-ocid="quiz.done.button"
-                variant="outline"
                 onClick={onBack}
-                className="w-full h-12 rounded-xl text-gray-600"
+                className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-lg"
               >
-                Back to Home
+                Next Passage →
               </Button>
-            </div>
-          )}
+            ) : (
+              <div className="space-y-3">
+                <Button
+                  data-ocid="quiz.retry.button"
+                  onClick={handleRetry}
+                  className="w-full h-12 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-lg"
+                >
+                  Try Again 🔁
+                </Button>
+                <Button
+                  data-ocid="quiz.done.button"
+                  variant="outline"
+                  onClick={onBack}
+                  className="w-full h-12 rounded-xl text-gray-600"
+                >
+                  Back to Home
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -156,7 +164,12 @@ export default function ComprehensionQuiz({
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-md mx-auto">
-        <div className="bg-blue-600 text-white px-4 pt-10 pb-6">
+        <div className="w-full bg-white border-b border-gray-100 py-3 px-4 text-center">
+          <span className="text-2xl font-extrabold text-black tracking-widest">
+            CLASSIO
+          </span>
+        </div>
+        <div className="bg-blue-600 text-white px-4 pt-6 pb-6">
           <button
             type="button"
             data-ocid="quiz.back.button"

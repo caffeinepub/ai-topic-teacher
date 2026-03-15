@@ -93,7 +93,12 @@ export default function ProgressReport({
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-md mx-auto">
-        <div className="bg-amber-500 text-white px-4 pt-10 pb-6">
+        <div className="w-full bg-white border-b border-gray-100 py-3 px-4 text-center">
+          <span className="text-2xl font-extrabold text-black tracking-widest">
+            CLASSIO
+          </span>
+        </div>
+        <div className="bg-amber-500 text-white px-4 pt-6 pb-6">
           <button
             type="button"
             data-ocid="report.back.button"
