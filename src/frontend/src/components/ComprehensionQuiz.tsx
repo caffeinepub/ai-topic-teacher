@@ -1,3 +1,4 @@
+import AppHeader from "@/components/AppHeader";
 import type { WordResult } from "@/components/ReadAndRecord";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -44,7 +45,6 @@ export default function ComprehensionQuiz({
         (a, i) => a === passage.questions[i].correct,
       ).length;
       const score = Math.round((correct / total) * 100);
-      // Pass = more than 2 out of 5 (i.e. 3 or more correct)
       const passed = correct >= 3;
       setAnswers(newAnswers);
       setResultData({ correct, score, passed, finalAnswers: newAnswers });
@@ -56,7 +56,6 @@ export default function ComprehensionQuiz({
   if (showResult && resultData) {
     const { correct, passed, finalAnswers } = resultData;
 
-    // Reading stats
     const missedCount =
       wordResults?.filter((w) => w.status === "missed").length ?? 0;
     const mispronounced =
@@ -67,13 +66,8 @@ export default function ComprehensionQuiz({
 
     return (
       <div className="min-h-screen bg-white flex flex-col">
-        <div className="w-full bg-white border-b border-gray-100 py-3 px-4 text-center">
-          <span className="text-2xl font-extrabold text-black tracking-widest">
-            CLASSIO
-          </span>
-        </div>
+        <AppHeader />
         <div className="flex-1 p-4 max-w-md mx-auto w-full space-y-6">
-          {/* Quiz Score */}
           <div className="text-center">
             <div className="text-6xl mb-4">{passed ? "🎉" : "💪"}</div>
             <h2 className="font-display text-3xl font-bold text-gray-800 mb-2">
@@ -123,7 +117,6 @@ export default function ComprehensionQuiz({
             </div>
           </div>
 
-          {/* Question Review */}
           <div>
             <h3 className="font-bold text-gray-800 text-lg mb-3 flex items-center gap-2">
               📋 Question & Answer Review
@@ -184,13 +177,11 @@ export default function ComprehensionQuiz({
             </div>
           </div>
 
-          {/* Combined Report */}
           <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5">
             <h3 className="font-bold text-indigo-800 text-lg mb-4 flex items-center gap-2">
               📊 Your Full Report
             </h3>
 
-            {/* Quiz score */}
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">
                 Quiz Score
@@ -212,7 +203,6 @@ export default function ComprehensionQuiz({
               </div>
             </div>
 
-            {/* Reading stats */}
             {totalWords > 0 && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">
@@ -267,11 +257,7 @@ export default function ComprehensionQuiz({
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-md mx-auto">
-        <div className="w-full bg-white border-b border-gray-100 py-3 px-4 text-center">
-          <span className="text-2xl font-extrabold text-black tracking-widest">
-            CLASSIO
-          </span>
-        </div>
+        <AppHeader />
         <div className="bg-blue-600 text-white px-4 pt-6 pb-6">
           <button
             type="button"

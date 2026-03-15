@@ -1,3 +1,4 @@
+import AppHeader from "@/components/AppHeader";
 import ComprehensionQuiz from "@/components/ComprehensionQuiz";
 import Dashboard from "@/components/Dashboard";
 import IntonationPractice from "@/components/IntonationPractice";
@@ -64,7 +65,6 @@ export default function App() {
     });
 
     if (passed) {
-      // Student passed (>2/5): advance to next passage
       advancePassage(student.grade);
       const newOffset = currentOffset + 1;
       if (!hasMorePassages(student.grade, newOffset)) {
@@ -73,7 +73,6 @@ export default function App() {
         setScreen("dashboard");
       }
     } else {
-      // Student failed (<=2/5): stay on same passage, go back to dashboard
       setScreen("dashboard");
     }
   };
@@ -132,32 +131,34 @@ export default function App() {
   if (screen === "completed") {
     return (
       <>
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-6">
-          <div className="text-center max-w-md">
-            <div className="text-6xl mb-6">🎉</div>
-            <h1 className="text-3xl font-bold text-black mb-2">Classio</h1>
-            <h2 className="text-2xl font-bold text-green-700 mb-4">
-              Amazing Work, {student.name}!
-            </h2>
-            <p className="text-gray-700 text-lg mb-6">
-              You have completed all passages for{" "}
-              <span className="font-semibold text-green-700">
-                Grade {student.grade}
-              </span>
-              ! 🎉
-            </p>
-            <p className="text-gray-500 mb-8">
-              You read every passage and answered all the quizzes. That&apos;s a
-              fantastic achievement!
-            </p>
-            <button
-              type="button"
-              data-ocid="completed.primary_button"
-              onClick={handleBackToHome}
-              className="bg-green-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-green-700 transition-colors text-lg"
-            >
-              Back to Home
-            </button>
+        <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-green-50 to-blue-50">
+          <AppHeader />
+          <div className="flex-1 flex flex-col items-center justify-center p-6">
+            <div className="text-center max-w-md">
+              <div className="text-6xl mb-6">🎉</div>
+              <h2 className="text-2xl font-bold text-green-700 mb-4">
+                Amazing Work, {student.name}!
+              </h2>
+              <p className="text-gray-700 text-lg mb-6">
+                You have completed all passages for{" "}
+                <span className="font-semibold text-green-700">
+                  Grade {student.grade}
+                </span>
+                ! 🎉
+              </p>
+              <p className="text-gray-500 mb-8">
+                You read every passage and answered all the quizzes. That&apos;s
+                a fantastic achievement!
+              </p>
+              <button
+                type="button"
+                data-ocid="completed.primary_button"
+                onClick={handleBackToHome}
+                className="bg-green-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-green-700 transition-colors text-lg"
+              >
+                Back to Home
+              </button>
+            </div>
           </div>
         </div>
         <Toaster />

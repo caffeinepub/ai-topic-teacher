@@ -1,3 +1,4 @@
+import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import type { Passage } from "@/data/content";
 import { useEffect, useRef, useState } from "react";
@@ -207,11 +208,7 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-md mx-auto">
-        <div className="w-full bg-white border-b border-gray-100 py-3 px-4 text-center">
-          <span className="text-2xl font-extrabold text-black tracking-widest">
-            CLASSIO
-          </span>
-        </div>
+        <AppHeader />
         <div className="bg-rose-500 text-white px-4 pt-6 pb-6">
           <button
             type="button"

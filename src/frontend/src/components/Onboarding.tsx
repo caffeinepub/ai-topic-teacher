@@ -1,3 +1,4 @@
+import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -20,11 +21,7 @@ export default function Onboarding({ onComplete }: Props) {
 
   return (
     <div className="min-h-screen bg-amber-50 flex flex-col">
-      <div className="w-full bg-white border-b border-gray-100 py-3 px-4 text-center">
-        <span className="text-2xl font-extrabold text-black tracking-widest">
-          CLASSIO
-        </span>
-      </div>
+      <AppHeader />
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
