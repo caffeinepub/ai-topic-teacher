@@ -1,0 +1,47 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0.98 0.01 80;
+    --foreground: 0.2 0.04 40;
+    --card: 1 0 0;
+    --card-foreground: 0.2 0.04 40;
+    --popover: 1 0 0;
+    --popover-foreground: 0.2 0.04 40;
+    --primary: 0.65 0.16 40;
+    --primary-foreground: 1 0 0;
+    --secondary: 0.96 0.02 80;
+    --secondary-foreground: 0.25 0.04 40;
+    --muted: 0.95 0.01 80;
+    --muted-foreground: 0.55 0.03 60;
+    --accent: 0.94 0.03 80;
+    --accent-foreground: 0.25 0.04 40;
+    --destructive: 0.62 0.22 25;
+    --destructive-foreground: 1 0 0;
+    --border: 0.88 0.03 80;
+    --input: 0.88 0.03 80;
+    --ring: 0.65 0.16 40;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+}
+
+.font-display {
+  font-family: "Fraunces", serif;
+}
+
+.font-body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
