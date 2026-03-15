@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 interface Props {
   name: string;
-  onComplete: (name: string, grade: number) => void;
+  onComplete: (name: string, grade: number, score: number) => void;
 }
 
 const PASSAGE =
@@ -257,7 +257,7 @@ export default function ProficiencyTest({ name, onComplete }: Props) {
               <Button
                 data-ocid="proficiency.confirm.primary_button"
                 disabled={selectedGrade === 0}
-                onClick={() => onComplete(name, selectedGrade)}
+                onClick={() => onComplete(name, selectedGrade, accuracy)}
                 className="w-full h-14 text-lg rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold"
               >
                 Start Learning at Grade {selectedGrade}! 🚀

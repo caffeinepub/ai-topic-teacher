@@ -1,26 +1,26 @@
 # Classio
 
 ## Current State
-The home screen (Onboarding.tsx) shows a name input for students and a small "Teacher / Parent View" link at the bottom. Teachers access the dashboard via PIN (1234) in TeacherDashboard.tsx. There is no dedicated login page.
+Classio is an adaptive reading platform for grades 1-5. When a student logs in, handleStudentLogin creates a session and goes directly to the dashboard - the proficiency test is skipped. The ProficiencyTest component exists but only triggers from old Onboarding. ProgressReport shows activity data but no proficiency results or adaptive grade history.
 
 ## Requested Changes (Diff)
 
 ### Add
-- New `LoginPage.tsx`: a dedicated login screen with two clear paths — Student and Teacher.
-- Student path: name input → proficiency test or dashboard.
-- Teacher path: PIN input (1234) → TeacherDashboard.
+- After student login, if proficiency test not done, show ProficiencyTest before dashboard
+- Store proficiency score and assigned grade in student data
+- Track grade change history (adaptive learning log) in student store
+- Consolidated student dashboard in ProgressReport: proficiency result, adaptive grade progression, all 5 module summary
 
 ### Modify
-- `App.tsx`: add `login` screen; show LoginPage as the entry point.
-- `Onboarding.tsx`: remove the Teacher/Parent View link.
-- `TeacherDashboard.tsx`: remove the internal PIN gate (auth moved to LoginPage).
+- App.tsx: handleStudentLogin checks proficiencyDone; if false, route to proficiency test
+- useStudentStore.ts: Add proficiencyScore, proficiencyGrade, gradeHistory fields; update createStudent
+- ProgressReport.tsx: Add Student Dashboard section at top
 
 ### Remove
-- Inline teacher link from Onboarding.tsx.
-- PIN lock screen inside TeacherDashboard.tsx.
+- Nothing
 
 ## Implementation Plan
-1. Create `LoginPage.tsx` with two cards: Student (name input) and Teacher (PIN input 1234). Show Classio logo and branding.
-2. Update `App.tsx`: add `login` to Screen type, start at `login` if no student name, pass `onStudentLogin` and `onTeacherLogin` callbacks.
-3. Update `Onboarding.tsx`: remove `onTeacherView` prop.
-4. Update `TeacherDashboard.tsx`: remove the PIN lock state/UI, render dashboard directly.
+1. Update StudentData with proficiencyScore, proficiencyGrade, gradeHistory
+2. Add completeWithProficiency store method
+3. Fix App.tsx login flow to show proficiency test
+4. Enhance ProgressReport with consolidated dashboard panel

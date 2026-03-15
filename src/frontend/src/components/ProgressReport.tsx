@@ -340,6 +340,195 @@ export default function ProgressReport({
         </div>
 
         <div className="p-4 space-y-5">
+          {/* ── STUDENT DASHBOARD ── */}
+          {/* Proficiency Test Card */}
+          {student.proficiencyDone && (student.proficiencyGrade ?? 0) > 0 && (
+            <div
+              className={`rounded-2xl border p-4 ${
+                (student.proficiencyScore ?? 0) >= 75
+                  ? "bg-green-50 border-green-200"
+                  : (student.proficiencyScore ?? 0) >= 50
+                    ? "bg-yellow-50 border-yellow-200"
+                    : "bg-orange-50 border-orange-200"
+              }`}
+              data-ocid="report.proficiency.card"
+            >
+              <p className="font-bold text-sm uppercase tracking-wide mb-3 text-gray-700">
+                🎓 Proficiency Test Result
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <p
+                    className={`text-4xl font-extrabold ${
+                      (student.proficiencyScore ?? 0) >= 75
+                        ? "text-green-600"
+                        : (student.proficiencyScore ?? 0) >= 50
+                          ? "text-yellow-600"
+                          : "text-orange-500"
+                    }`}
+                  >
+                    {student.proficiencyScore ?? 0}%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">Accuracy</p>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-700">
+                    Starting Grade:{" "}
+                    <span className="font-extrabold text-amber-600">
+                      Grade {student.proficiencyGrade ?? 0}
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {(student.proficiencyScore ?? 0) >= 75
+                      ? "Excellent reading ability!"
+                      : (student.proficiencyScore ?? 0) >= 50
+                        ? "Good start — keep practising!"
+                        : "Building strong foundations!"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Adaptive Learning Timeline */}
+          {(student.gradeHistory ?? []).length > 0 && (
+            <div
+              className="bg-blue-50 border border-blue-200 rounded-2xl p-4"
+              data-ocid="report.grade-history.panel"
+            >
+              <p className="font-bold text-blue-800 text-sm uppercase tracking-wide mb-3">
+                📈 Adaptive Learning Path
+              </p>
+              <div className="relative pl-4">
+                <div className="absolute left-1.5 top-0 bottom-0 w-0.5 bg-blue-200" />
+                {(student.gradeHistory ?? []).map((entry, i) => {
+                  const isCurrent =
+                    i === (student.gradeHistory ?? []).length - 1;
+                  return (
+                    <div
+                      key={String(entry.timestamp) + String(i)}
+                      className={`relative flex items-start gap-3 mb-3 last:mb-0 ${isCurrent ? "opacity-100" : "opacity-70"}`}
+                      data-ocid={[
+                        "report",
+                        "grade-history",
+                        "item",
+                        String(i + 1),
+                      ].join(".")}
+                    >
+                      <div
+                        className={`absolute -left-4 w-3 h-3 rounded-full border-2 border-white ${isCurrent ? "bg-blue-500" : "bg-blue-300"}`}
+                        style={{ top: "4px" }}
+                      />
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            isCurrent
+                              ? "bg-blue-500 text-white"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
+                        >
+                          Grade {entry.grade}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {entry.reason}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(entry.timestamp).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
+                        </span>
+                        {isCurrent && (
+                          <span className="text-xs font-bold text-blue-500">
+                            (Current)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Module Summary Grid */}
+          <div
+            className="rounded-2xl border border-gray-200 p-4"
+            data-ocid="report.modules.panel"
+          >
+            <p className="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">
+              📚 Module Summary
+            </p>
+            <div className="grid grid-cols-5 gap-2">
+              {[
+                {
+                  key: "record",
+                  icon: "🎤",
+                  label: "Read & Record",
+                  color: "bg-amber-50 border-amber-200 text-amber-700",
+                },
+                {
+                  key: "quiz",
+                  icon: "📝",
+                  label: "Read & Quiz",
+                  color: "bg-blue-50 border-blue-200 text-blue-700",
+                },
+                {
+                  key: "missing-words",
+                  icon: "✏️",
+                  label: "Missing Words",
+                  color: "bg-yellow-50 border-yellow-200 text-yellow-700",
+                },
+                {
+                  key: "pronunciation",
+                  icon: "🗣️",
+                  label: "Pronunciation",
+                  color: "bg-purple-50 border-purple-200 text-purple-700",
+                },
+                {
+                  key: "intonation",
+                  icon: "🎵",
+                  label: "Intonation",
+                  color: "bg-green-50 border-green-200 text-green-700",
+                },
+              ].map((mod) => {
+                const modSessions = allSessions.filter(
+                  (s) => s.activity === mod.key,
+                );
+                const lastSession = modSessions[modSessions.length - 1];
+                return (
+                  <div
+                    key={mod.key}
+                    className={[
+                      "flex flex-col items-center text-center rounded-xl border p-2 gap-1",
+                      mod.color,
+                    ].join(" ")}
+                    data-ocid={[
+                      "report",
+                      "module",
+                      mod.key.replace("-", "-"),
+                      "card",
+                    ].join(".")}
+                  >
+                    <span className="text-lg">{mod.icon}</span>
+                    <span className="text-xs font-semibold leading-tight">
+                      {mod.label}
+                    </span>
+                    <span className="text-xs font-bold">
+                      {modSessions.length} sessions
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {lastSession ? `${lastSession.score}%` : "Not started"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* ── OVERALL SUMMARY ── */}
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <p className="font-bold text-amber-800 text-sm uppercase tracking-wide mb-3">

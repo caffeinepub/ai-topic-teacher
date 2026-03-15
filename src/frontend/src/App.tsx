@@ -11,9 +11,11 @@ import ProgressReport from "@/components/ProgressReport";
 import PronunciationPractice from "@/components/PronunciationPractice";
 import ReadAndRecord from "@/components/ReadAndRecord";
 import type { WordResult } from "@/components/ReadAndRecord";
+import SuperAdminDashboard from "@/components/SuperAdminDashboard";
 import TeacherDashboard from "@/components/TeacherDashboard";
 import { Toaster } from "@/components/ui/sonner";
 import { getPassageByGrade, hasMorePassages } from "@/data/content";
+import type { TeacherAccount } from "@/store/useAuthStore";
 import { useStudentStore } from "@/store/useStudentStore";
 import { useState } from "react";
 
@@ -30,12 +32,14 @@ type Screen =
   | "intonation"
   | "report"
   | "completed"
-  | "teacher-dashboard";
+  | "teacher-dashboard"
+  | "super-admin";
 
 export default function App() {
   const {
     student,
     createStudent,
+    completeWithProficiency,
     addSession,
     advancePassage,
     reset,
@@ -47,20 +51,46 @@ export default function App() {
     return "dashboard";
   });
   const [pendingName, setPendingName] = useState("");
+  const [pendingStudentName, setPendingStudentName] = useState("");
   const [recordingWordResults, setRecordingWordResults] = useState<
     WordResult[]
   >([]);
+  const [loggedInTeacher, setLoggedInTeacher] = useState<TeacherAccount | null>(
+    null,
+  );
 
   const currentOffset = student.passageOffsets?.[student.grade] ?? 0;
   const passage = getPassageByGrade(student.grade, currentOffset);
 
-  const handleStudentLogin = (name: string) => {
-    setPendingName(name);
+  const handleStudentLogin = (
+    _studentId: string,
+    name: string,
+    grade: number,
+  ) => {
+    // Check if this student already has data with proficiency done
+    try {
+      const stored = localStorage.getItem("readwise_student");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.name === name && parsed.proficiencyDone) {
+          createStudent(name, grade);
+          setScreen("dashboard");
+          return;
+        }
+      }
+    } catch {}
+    // New student or proficiency not done - show proficiency test
+    setPendingStudentName(name);
     setScreen("proficiency-test");
   };
 
-  const handleTeacherLogin = () => {
+  const handleTeacherLogin = (teacher: TeacherAccount) => {
+    setLoggedInTeacher(teacher);
     setScreen("teacher-dashboard");
+  };
+
+  const handleSuperAdminLogin = () => {
+    setScreen("super-admin");
   };
 
   const handleOnboarding = (name: string) => {
@@ -68,8 +98,12 @@ export default function App() {
     setScreen("proficiency-test");
   };
 
-  const handleProficiencyComplete = (name: string, grade: number) => {
-    createStudent(name, grade);
+  const handleProficiencyComplete = (
+    name: string,
+    grade: number,
+    score?: number,
+  ) => {
+    completeWithProficiency(name, grade, score ?? 0);
     setScreen("dashboard");
   };
 
@@ -166,7 +200,17 @@ export default function App() {
         <LoginPage
           onStudentLogin={handleStudentLogin}
           onTeacherLogin={handleTeacherLogin}
+          onSuperAdminLogin={handleSuperAdminLogin}
         />
+        <Toaster />
+      </>
+    );
+  }
+
+  if (screen === "super-admin") {
+    return (
+      <>
+        <SuperAdminDashboard onBack={() => setScreen("login")} />
         <Toaster />
       </>
     );
@@ -175,7 +219,10 @@ export default function App() {
   if (screen === "teacher-dashboard") {
     return (
       <>
-        <TeacherDashboard onBack={() => setScreen("login")} />
+        <TeacherDashboard
+          teacher={loggedInTeacher!}
+          onBack={() => setScreen("login")}
+        />
         <Toaster />
       </>
     );
@@ -193,7 +240,7 @@ export default function App() {
   if (screen === "proficiency-test") {
     return (
       <ProficiencyTest
-        name={pendingName}
+        name={pendingStudentName || pendingName}
         onComplete={handleProficiencyComplete}
       />
     );

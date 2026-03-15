@@ -23,6 +23,12 @@ export interface Session {
   wordResults?: WordResult[];
 }
 
+export interface GradeHistoryEntry {
+  grade: number;
+  timestamp: number;
+  reason: string;
+}
+
 export interface StudentData {
   name: string;
   grade: number;
@@ -32,6 +38,9 @@ export interface StudentData {
   lastActivity: number;
   passageOffsets: Record<number, number>;
   proficiencyDone: boolean;
+  proficiencyScore: number;
+  proficiencyGrade: number;
+  gradeHistory: GradeHistoryEntry[];
 }
 
 const STORAGE_KEY = "readwise_student";
@@ -46,6 +55,9 @@ const defaultStudent: StudentData = {
   lastActivity: 0,
   passageOffsets: {},
   proficiencyDone: false,
+  proficiencyScore: 0,
+  proficiencyGrade: 0,
+  gradeHistory: [],
 };
 
 function upsertAllStudents(data: StudentData) {
@@ -69,6 +81,9 @@ export function useStudentStore() {
         const parsed = JSON.parse(stored);
         if (!parsed.passageOffsets) parsed.passageOffsets = {};
         if (parsed.proficiencyDone === undefined) parsed.proficiencyDone = true;
+        if (parsed.proficiencyScore === undefined) parsed.proficiencyScore = 0;
+        if (parsed.proficiencyGrade === undefined) parsed.proficiencyGrade = 0;
+        if (!parsed.gradeHistory) parsed.gradeHistory = [];
         return parsed;
       }
       return defaultStudent;
@@ -89,7 +104,29 @@ export function useStudentStore() {
       name,
       grade,
       lastActivity: Date.now(),
+      proficiencyDone: false,
+    });
+  };
+
+  const completeWithProficiency = (
+    name: string,
+    grade: number,
+    score: number,
+  ) => {
+    const entry: GradeHistoryEntry = {
+      grade,
+      timestamp: Date.now(),
+      reason: "Proficiency Test",
+    };
+    save({
+      ...defaultStudent,
+      name,
+      grade,
+      lastActivity: Date.now(),
       proficiencyDone: true,
+      proficiencyScore: score,
+      proficiencyGrade: grade,
+      gradeHistory: [entry],
     });
   };
 
@@ -110,17 +147,27 @@ export function useStudentStore() {
       id: Math.random().toString(36).slice(2),
       timestamp: Date.now(),
     };
-    const updated = {
+    const updated: StudentData = {
       ...student,
       sessions: [...student.sessions, newSession],
       lastActivity: Date.now(),
     };
 
     if (session.activity === "quiz") {
-      if (session.score >= 80 && updated.grade < 5)
+      const prevGrade = updated.grade;
+      if (session.score >= 80 && updated.grade < 5) {
         updated.grade = updated.grade + 1;
-      else if (session.score < 50 && updated.grade > 1)
+      } else if (session.score < 50 && updated.grade > 1) {
         updated.grade = updated.grade - 1;
+      }
+      if (updated.grade !== prevGrade) {
+        const entry: GradeHistoryEntry = {
+          grade: updated.grade,
+          timestamp: Date.now(),
+          reason: "Quiz Performance",
+        };
+        updated.gradeHistory = [...(student.gradeHistory ?? []), entry];
+      }
     }
 
     const badges = new Set(updated.badges);
@@ -167,6 +214,7 @@ export function useStudentStore() {
   return {
     student,
     createStudent,
+    completeWithProficiency,
     addSession,
     advancePassage,
     updateGrade,
