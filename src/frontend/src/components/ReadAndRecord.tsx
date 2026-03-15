@@ -316,12 +316,12 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                         Mispronounced
                       </div>
                     </div>
-                    <div className="bg-rose-50 rounded-xl p-3">
-                      <div className="text-2xl font-bold text-rose-600">
+                    <div className="bg-orange-100 rounded-xl p-3">
+                      <div className="text-2xl font-bold text-orange-700">
                         {missedCount}
                       </div>
-                      <div className="text-xs text-rose-700 font-semibold">
-                        Missed
+                      <div className="text-xs text-orange-800 font-semibold">
+                        Not Read
                       </div>
                     </div>
                   </div>
@@ -343,10 +343,10 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                           }
                           className={`px-2 py-1 rounded-lg text-sm font-medium border ${
                             w.status === "correct"
-                              ? "bg-green-50 border-green-300 text-green-800"
+                              ? "bg-green-100 border-green-300 text-green-800"
                               : w.status === "mispronounced"
                                 ? "bg-orange-100 border-orange-400 text-orange-800"
-                                : "bg-rose-100 border-rose-400 text-rose-800 line-through"
+                                : "bg-orange-200 border-orange-500 text-orange-900"
                           }`}
                         >
                           {w.original}
@@ -356,7 +356,7 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                             </span>
                           )}
                           {w.status === "missed" && (
-                            <span className="ml-1 text-rose-500 text-xs">
+                            <span className="ml-1 text-orange-700 font-bold text-xs">
                               ✗
                             </span>
                           )}
@@ -366,15 +366,21 @@ export default function ReadAndRecord({ passage, onComplete, onBack }: Props) {
                     <div className="flex gap-3 mt-3 text-xs">
                       <span className="flex items-center gap-1">
                         <span className="w-3 h-3 rounded bg-green-200 inline-block" />
-                        Correct
+                        <span className="text-green-800 font-semibold">
+                          Correct
+                        </span>
                       </span>
                       <span className="flex items-center gap-1">
                         <span className="w-3 h-3 rounded bg-orange-200 inline-block" />
-                        Mispronounced
+                        <span className="text-orange-800 font-semibold">
+                          Mispronounced
+                        </span>
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded bg-rose-200 inline-block" />
-                        Missed
+                        <span className="w-3 h-3 rounded bg-orange-300 inline-block" />
+                        <span className="text-orange-900 font-semibold">
+                          Not Read ✗
+                        </span>
                       </span>
                     </div>
                   </div>

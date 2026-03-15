@@ -1,5 +1,11 @@
 import { useState } from "react";
 
+export interface WordResult {
+  original: string;
+  status: "correct" | "mispronounced" | "missed";
+  heard?: string;
+}
+
 export interface Session {
   id: string;
   passageId: string;
@@ -14,6 +20,7 @@ export interface Session {
   timestamp: number;
   quizAnswers?: number[];
   passageTitle?: string;
+  wordResults?: WordResult[];
 }
 
 export interface StudentData {

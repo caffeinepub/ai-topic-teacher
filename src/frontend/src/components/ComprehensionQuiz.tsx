@@ -55,6 +55,7 @@ export default function ComprehensionQuiz({
 
   if (showResult && resultData) {
     const { correct, passed, finalAnswers } = resultData;
+    const percentScore = Math.round((correct / total) * 100);
 
     const missedCount =
       wordResults?.filter((w) => w.status === "missed").length ?? 0;
@@ -73,11 +74,16 @@ export default function ComprehensionQuiz({
             <h2 className="font-display text-3xl font-bold text-gray-800 mb-2">
               Quiz Complete!
             </h2>
-            <div className="text-5xl font-bold text-blue-600 mb-2">
-              {correct}/{total}
+
+            {/* Big % Score */}
+            <div className="text-7xl font-extrabold text-blue-600 mb-1">
+              {percentScore}%
             </div>
-            <p className="text-gray-600 mb-4">
-              You got {correct} out of {total} correct
+            <div className="text-xl font-semibold text-gray-500 mb-1">
+              {correct}/{total} correct
+            </div>
+            <p className="text-gray-500 text-sm mb-4">
+              You scored {percentScore} out of 100%
             </p>
 
             <div className="flex justify-center mb-4">
@@ -188,9 +194,11 @@ export default function ComprehensionQuiz({
               </p>
               <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-indigo-100">
                 <span className="text-3xl font-extrabold text-blue-600">
-                  {correct}/{total}
+                  {percentScore}%
                 </span>
-                <span className="text-gray-600 text-sm">questions correct</span>
+                <span className="text-gray-500 text-sm">
+                  ({correct}/{total} questions)
+                </span>
                 <span
                   className={`ml-auto font-bold text-sm px-3 py-1 rounded-full ${
                     passed
@@ -204,33 +212,85 @@ export default function ComprehensionQuiz({
             </div>
 
             {totalWords > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">
-                  Reading Analysis
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-green-50 rounded-xl p-3 text-center border border-green-200">
-                    <div className="text-2xl font-bold text-green-600">
-                      {correctWords}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">
+                    Reading Analysis
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-green-50 rounded-xl p-3 text-center border border-green-200">
+                      <div className="text-2xl font-bold text-green-600">
+                        {correctWords}
+                      </div>
+                      <div className="text-xs text-green-700 font-semibold mt-1">
+                        Correct Words
+                      </div>
                     </div>
-                    <div className="text-xs text-green-700 font-semibold mt-1">
-                      Correct Words
+                    <div className="bg-orange-50 rounded-xl p-3 text-center border border-orange-200">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {mispronounced}
+                      </div>
+                      <div className="text-xs text-orange-700 font-semibold mt-1">
+                        Mispronounced
+                      </div>
+                    </div>
+                    <div className="bg-orange-100 rounded-xl p-3 text-center border border-orange-300">
+                      <div className="text-2xl font-bold text-orange-700">
+                        {missedCount}
+                      </div>
+                      <div className="text-xs text-orange-800 font-semibold mt-1">
+                        Not Read
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-orange-50 rounded-xl p-3 text-center border border-orange-200">
-                    <div className="text-2xl font-bold text-orange-600">
-                      {mispronounced}
+                </div>
+
+                {/* Highlighted word display */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">
+                    Word Highlights
+                  </p>
+                  <div className="bg-white rounded-xl p-3 border border-indigo-100">
+                    <div className="flex flex-wrap gap-1.5">
+                      {wordResults?.map((w, i) => (
+                        <span
+                          key={`${w.original}-${i}`}
+                          className={`px-2 py-1 rounded-lg text-sm font-medium relative ${
+                            w.status === "correct"
+                              ? "bg-green-200 text-green-900"
+                              : w.status === "mispronounced"
+                                ? "bg-orange-200 text-orange-900"
+                                : "bg-orange-300 text-orange-900 opacity-80"
+                          }`}
+                        >
+                          {w.original}
+                          {w.status === "missed" && (
+                            <span className="ml-1 text-orange-700 font-bold text-xs">
+                              ✗
+                            </span>
+                          )}
+                        </span>
+                      ))}
                     </div>
-                    <div className="text-xs text-orange-700 font-semibold mt-1">
-                      Mispronounced
-                    </div>
-                  </div>
-                  <div className="bg-rose-50 rounded-xl p-3 text-center border border-rose-200">
-                    <div className="text-2xl font-bold text-rose-600">
-                      {missedCount}
-                    </div>
-                    <div className="text-xs text-rose-700 font-semibold mt-1">
-                      Not Read
+                    <div className="flex flex-wrap gap-3 mt-3 text-xs">
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded bg-green-200 inline-block" />
+                        <span className="text-green-900 font-semibold">
+                          Correct
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded bg-orange-200 inline-block" />
+                        <span className="text-orange-900 font-semibold">
+                          Mispronounced
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded bg-orange-300 opacity-80 inline-block" />
+                        <span className="text-orange-900 font-semibold">
+                          Not Read ✗
+                        </span>
+                      </span>
                     </div>
                   </div>
                 </div>

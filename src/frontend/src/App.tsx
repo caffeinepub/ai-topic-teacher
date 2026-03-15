@@ -62,6 +62,7 @@ export default function App() {
       activity: "quiz",
       quizAnswers,
       passageTitle: passage.title,
+      wordResults: recordingWordResults,
     });
 
     if (passed) {
@@ -83,16 +84,26 @@ export default function App() {
       grade: student.grade,
       score,
       activity: "missing-words",
+      passageTitle: passage.title,
     });
   };
 
   const handleRecordComplete = (wordResults: WordResult[]) => {
     setRecordingWordResults(wordResults);
+    const correctCount = wordResults.filter(
+      (w) => w.status === "correct",
+    ).length;
+    const accuracyScore =
+      wordResults.length > 0
+        ? Math.round((correctCount / wordResults.length) * 100)
+        : 100;
     addSession({
       passageId: passage.id,
       grade: student.grade,
-      score: 100,
+      score: accuracyScore,
       activity: "record",
+      passageTitle: passage.title,
+      wordResults,
     });
     setScreen("quiz");
   };
@@ -103,6 +114,7 @@ export default function App() {
       grade: student.grade,
       score: 100,
       activity: "pronunciation",
+      passageTitle: passage.title,
     });
   };
 
@@ -112,6 +124,7 @@ export default function App() {
       grade: student.grade,
       score: 100,
       activity: "intonation",
+      passageTitle: passage.title,
     });
   };
 
