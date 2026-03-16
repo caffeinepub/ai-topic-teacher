@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/store/useAuthStore";
-import type { TeacherAccount } from "@/store/useAuthStore";
+import type { StudentAccount, TeacherAccount } from "@/store/useAuthStore";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
@@ -11,7 +11,12 @@ const SUPER_ADMIN_USER = "Classio123";
 const SUPER_ADMIN_PASS = "Classio@123";
 
 interface Props {
-  onStudentLogin: (studentId: string, name: string, grade: number) => void;
+  onStudentLogin: (
+    studentId: string,
+    name: string,
+    grade: number,
+    account?: StudentAccount,
+  ) => void;
   onTeacherLogin: (teacher: TeacherAccount) => void;
   onSuperAdminLogin: () => void;
 }
@@ -53,7 +58,7 @@ export default function LoginPage({
       setStuError("Invalid Student ID, contact number, or password.");
       return;
     }
-    onStudentLogin(account.studentId, account.name, account.grade);
+    onStudentLogin(account.studentId, account.name, account.grade, account);
   };
 
   const handleTeacherSubmit = () => {
@@ -78,7 +83,7 @@ export default function LoginPage({
   const roles = [
     {
       key: "student" as const,
-      emoji: "🎒",
+      emoji: "🎢",
       label: "Student",
       sub: "Start learning!",
       color: "teal",
@@ -210,7 +215,7 @@ export default function LoginPage({
                 className="bg-white rounded-3xl shadow-xl p-6 space-y-4 border border-teal-100"
               >
                 <p className="font-semibold text-teal-700 flex items-center gap-2">
-                  <span>🎒</span> Student Login
+                  <span>🎢</span> Student Login
                 </p>
                 <div className="space-y-1">
                   <Label htmlFor="stu-id" className="text-teal-700">

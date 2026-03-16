@@ -20,6 +20,8 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  Eye,
+  EyeOff,
   Trash2,
   UserPlus,
 } from "lucide-react";
@@ -40,6 +42,40 @@ function avgScore(student: StudentData) {
   return Math.round(
     quizSessions.reduce((a, s) => a + s.score, 0) / quizSessions.length,
   );
+}
+
+function getComprehensionLevel(student: StudentData | undefined): {
+  label: string;
+  color: string;
+  bg: string;
+  icon: string;
+} | null {
+  if (!student) return null;
+  const quizSessions = student.sessions.filter((s) => s.activity === "quiz");
+  if (quizSessions.length === 0) return null;
+  const avg = Math.round(
+    quizSessions.reduce((a, s) => a + s.score, 0) / quizSessions.length,
+  );
+  if (avg >= 80)
+    return {
+      label: "Proficient",
+      color: "text-green-700",
+      bg: "bg-green-100",
+      icon: "🌟",
+    };
+  if (avg >= 50)
+    return {
+      label: "Progressing",
+      color: "text-amber-700",
+      bg: "bg-amber-100",
+      icon: "📈",
+    };
+  return {
+    label: "Beginner",
+    color: "text-red-700",
+    bg: "bg-red-100",
+    icon: "🌱",
+  };
 }
 
 function generatePassword(): string {
@@ -67,6 +103,9 @@ export default function TeacherDashboard({ teacher, onBack }: Props) {
     password: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(
+    new Set(),
+  );
 
   const [form, setForm] = useState({ name: "", contactNumber: "", grade: "1" });
   const [formError, setFormError] = useState("");
@@ -107,6 +146,18 @@ export default function TeacherDashboard({ teacher, onBack }: Props) {
     removeStudent(studentId);
     setDeleteConfirm(null);
     if (expandedStudent === studentId) setExpandedStudent(null);
+  };
+
+  const togglePasswordVisibility = (studentId: string) => {
+    setVisiblePasswords((prev) => {
+      const next = new Set(prev);
+      if (next.has(studentId)) {
+        next.delete(studentId);
+      } else {
+        next.add(studentId);
+      }
+      return next;
+    });
   };
 
   const getProgressData = (studentName: string) =>
@@ -191,7 +242,9 @@ export default function TeacherDashboard({ teacher, onBack }: Props) {
               </p>
               <p>
                 <span className="text-gray-500">Password:</span>{" "}
-                {createdStudent.password}
+                <span className="font-bold text-orange-600">
+                  {createdStudent.password}
+                </span>
               </p>
             </div>
             <div className="flex gap-3">
@@ -264,7 +317,7 @@ export default function TeacherDashboard({ teacher, onBack }: Props) {
                   <SelectValue placeholder="Select grade" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[1, 2, 3, 4, 5].map((g) => (
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((g) => (
                     <SelectItem key={g} value={String(g)}>
                       Grade {g}
                     </SelectItem>
@@ -312,6 +365,8 @@ export default function TeacherDashboard({ teacher, onBack }: Props) {
           ) : (
             myStudents.map((stu, idx) => {
               const progress = getProgressData(stu.name);
+              const isPasswordVisible = visiblePasswords.has(stu.studentId);
+              const comprehensionLevel = getComprehensionLevel(progress);
               return (
                 <div
                   key={stu.studentId}
@@ -353,13 +408,105 @@ export default function TeacherDashboard({ teacher, onBack }: Props) {
                         <Badge className="bg-gray-100 text-gray-600 border-0 text-xs">
                           Grade {stu.grade}
                         </Badge>
+                        {/* Comprehension Level Badge */}
+                        {comprehensionLevel ? (
+                          <span
+                            data-ocid={`teacher.comprehension_level_badge.${idx + 1}`}
+                            className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${comprehensionLevel.bg} ${comprehensionLevel.color}`}
+                            title="Comprehension Level based on quiz scores"
+                          >
+                            {comprehensionLevel.icon} {comprehensionLevel.label}
+                          </span>
+                        ) : (
+                          <span
+                            data-ocid={`teacher.comprehension_level_badge.${idx + 1}`}
+                            className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500"
+                            title="No quiz data yet"
+                          >
+                            ⬜ Not assessed
+                          </span>
+                        )}
+                        {/* Weekly Vocab Badge */}
+                        {(() => {
+                          const weeklyVocabSessions =
+                            progress?.sessions.filter(
+                              (s) => s.activity === "weekly_vocab_test",
+                            ) ?? [];
+                          const latestWeeklyScore =
+                            weeklyVocabSessions.length > 0
+                              ? weeklyVocabSessions[
+                                  weeklyVocabSessions.length - 1
+                                ].score
+                              : null;
+                          return latestWeeklyScore !== null ? (
+                            <span
+                              data-ocid={`teacher.weekly_vocab_badge.${idx + 1}`}
+                              className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700"
+                              title="Latest Weekly Vocab Test Score"
+                            >
+                              📚 Vocab: {latestWeeklyScore}%
+                            </span>
+                          ) : (
+                            <span
+                              data-ocid={`teacher.weekly_vocab_badge.${idx + 1}`}
+                              className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500"
+                              title="No weekly vocab test taken yet"
+                            >
+                              📚 Vocab: —
+                            </span>
+                          );
+                        })()}
+                        {stu.mustChangePassword ? (
+                          <Badge className="bg-amber-100 text-amber-700 border-0 text-xs">
+                            🔑 System Password
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-green-100 text-green-700 border-0 text-xs">
+                            ✅ Password Set
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        📱 {stu.contactNumber}
-                        {progress
-                          ? ` · ${progress.sessions.length} sessions · Avg ${avgScore(progress)}% · Last: ${formatDate(progress.lastActivity)}`
-                          : " · No activity yet"}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <p className="text-xs text-gray-400">
+                          📱 {stu.contactNumber}
+                          {progress
+                            ? ` · ${progress.sessions.length} sessions · Avg ${avgScore(progress)}% · Last: ${formatDate(progress.lastActivity)}`
+                            : " · No activity yet"}
+                        </p>
+                      </div>
+                      {/* Password row */}
+                      <div
+                        className="flex items-center gap-1.5 mt-1"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        role="presentation"
+                      >
+                        <span className="text-xs text-gray-400">Password:</span>
+                        <span className="text-xs font-mono text-gray-700">
+                          {isPasswordVisible
+                            ? stu.password
+                            : "•".repeat(stu.password.length)}
+                        </span>
+                        <button
+                          type="button"
+                          data-ocid={`teacher.students.password_toggle.${idx + 1}`}
+                          onClick={() =>
+                            togglePasswordVisibility(stu.studentId)
+                          }
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                          title={
+                            isPasswordVisible
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                        >
+                          {isPasswordVisible ? (
+                            <EyeOff size={12} />
+                          ) : (
+                            <Eye size={12} />
+                          )}
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
@@ -383,6 +530,43 @@ export default function TeacherDashboard({ teacher, onBack }: Props) {
 
                   {expandedStudent === stu.studentId && progress && (
                     <div className="border-t border-gray-100">
+                      {/* Comprehension level card in expanded view */}
+                      <div
+                        data-ocid="student.comprehension_level_card"
+                        className="mx-4 mt-4 mb-2"
+                      >
+                        {comprehensionLevel ? (
+                          <div
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${comprehensionLevel.bg} border-opacity-50`}
+                          >
+                            <span className="text-2xl">
+                              {comprehensionLevel.icon}
+                            </span>
+                            <div>
+                              <p
+                                className={`font-bold text-sm ${comprehensionLevel.color}`}
+                              >
+                                Comprehension Level: {comprehensionLevel.label}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Based on avg quiz score: {avgScore(progress)}%
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 px-4 py-3 rounded-xl border bg-gray-50 border-gray-200">
+                            <span className="text-2xl">⬜</span>
+                            <div>
+                              <p className="font-bold text-sm text-gray-500">
+                                Comprehension Level: Not assessed
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                Student has not completed any quizzes yet.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       <ProgressReport
                         student={progress}
                         averageScore={avgScore(progress)}

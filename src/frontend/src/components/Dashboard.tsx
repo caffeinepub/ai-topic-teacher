@@ -1,18 +1,23 @@
 import AppHeader from "@/components/AppHeader";
+import Day200Progress from "@/components/Day200Progress";
+import WeeklyReport from "@/components/WeeklyReport";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { StudentData } from "@/store/useStudentStore";
-import { getBadge, getBadgeLabel } from "@/utils/badges";
+import { getBadge } from "@/utils/badges";
+import { getDayInfo } from "@/utils/dayPlan";
 
 type Screen =
   | "dashboard"
   | "passage"
   | "quiz"
-  | "missing-words"
   | "pronunciation"
   | "record"
-  | "intonation"
-  | "report";
+  | "vocab_learn"
+  | "vocab_test"
+  | "weekly_vocab_test"
+  | "report"
+  | "change-password";
 
 interface Props {
   student: StudentData;
@@ -20,6 +25,7 @@ interface Props {
   onBackToHome: () => void;
   completedActivities: string[];
   currentPassageTitle: string;
+  currentDay200: number;
 }
 
 const gradeColors = [
@@ -75,38 +81,33 @@ const gradeBgLightColors = [
   "bg-fuchsia-50",
 ];
 
-const ACTIVITIES = [
-  {
-    id: "record" as Screen,
-    icon: "🎙️",
-    title: "Read & Record",
-    desc: "Read the passage aloud and record your voice",
-  },
-  {
-    id: "quiz" as Screen,
-    icon: "📝",
-    title: "Read & Quiz",
-    desc: "Answer comprehension questions about the passage",
-  },
-  {
-    id: "missing-words" as Screen,
-    icon: "🔤",
-    title: "Missing Words",
-    desc: "Fill in the blanks from the passage",
-  },
-  {
-    id: "pronunciation" as Screen,
-    icon: "🗣️",
-    title: "Pronunciation",
-    desc: "Practice pronouncing key words correctly",
-  },
-  {
-    id: "intonation" as Screen,
-    icon: "🎵",
-    title: "Intonation",
-    desc: "Practice reading with proper tone and expression",
-  },
-];
+const ACTIVITIES: { id: Screen; icon: string; title: string; desc: string }[] =
+  [
+    {
+      id: "record",
+      icon: "🎙️",
+      title: "Read & Record",
+      desc: "Read the passage aloud and record your voice",
+    },
+    {
+      id: "quiz",
+      icon: "📝",
+      title: "Comprehension Quiz",
+      desc: "Answer questions about the passage",
+    },
+    {
+      id: "vocab_learn",
+      icon: "📚",
+      title: "Vocabulary Learn",
+      desc: "Learn key words with meanings, sentences and pronunciation",
+    },
+    {
+      id: "vocab_test",
+      icon: "📋",
+      title: "Vocab Practice Test",
+      desc: "Test yourself on the vocabulary words you learnt",
+    },
+  ];
 
 export default function Dashboard({
   student,
@@ -114,15 +115,29 @@ export default function Dashboard({
   onBackToHome,
   completedActivities,
   currentPassageTitle,
+  currentDay200,
 }: Props) {
   const totalSessions = student.sessions.length;
-  const progress = Math.min(((totalSessions % 5) / 5) * 100, 100);
+  const progress = Math.min(((totalSessions % 4) / 4) * 100, 100);
 
-  // Determine status of each activity
-  // Active = first activity that is not completed
+  const dayInfo = getDayInfo(currentDay200);
+
   const firstIncompleteIndex = ACTIVITIES.findIndex(
     (a) => !completedActivities.includes(a.id),
   );
+
+  const allActivitiesDone = ACTIVITIES.every((a) =>
+    completedActivities.includes(a.id),
+  );
+  const weeklyReports = student.weeklyReports ?? [];
+
+  // Show weekly test prompt at the end of each 4-passage grade block (after all 4 activities of last passage)
+  const isLastPassageInBlock = dayInfo.passageIndex === 3;
+  const hasWeeklyTestForBlock = student.sessions.some(
+    (s) => s.activity === "weekly_vocab_test" && s.grade === dayInfo.grade,
+  );
+  const showWeeklyTestPrompt =
+    allActivitiesDone && isLastPassageInBlock && !hasWeeklyTestForBlock;
 
   return (
     <div className="min-h-screen bg-teal-50">
@@ -167,6 +182,31 @@ export default function Dashboard({
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+        {/* 160-Day Progress */}
+        <Day200Progress currentDay={currentDay200} grade={student.grade} />
+
+        {/* Weekly Vocab Test prompt */}
+        {showWeeklyTestPrompt && (
+          <button
+            type="button"
+            data-ocid="dashboard.weekly_vocab_test.button"
+            onClick={() => onNavigate("weekly_vocab_test")}
+            className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-2xl p-4 text-left flex items-center gap-3 shadow-lg hover:scale-[1.01] transition-all"
+          >
+            <span className="text-3xl">🏆</span>
+            <div>
+              <p className="font-bold text-base">
+                Grade {dayInfo.grade} Vocab Test Available!
+              </p>
+              <p className="text-white/80 text-sm">
+                You&apos;ve completed all passages for this grade — take the
+                vocab test!
+              </p>
+            </div>
+            <span className="ml-auto text-xl">→</span>
+          </button>
+        )}
+
         {/* Current passage panel */}
         <div
           data-ocid="dashboard.passage.panel"
@@ -179,7 +219,7 @@ export default function Dashboard({
             📖 {currentPassageTitle}
           </p>
           <p className="text-gray-500 text-sm mt-1">
-            Complete all 5 activities below for this passage in order.
+            Complete all 4 activities below for this passage in order.
           </p>
         </div>
 
@@ -286,6 +326,20 @@ export default function Dashboard({
           </div>
         )}
 
+        {/* Weekly Reports */}
+        {weeklyReports.length > 0 && (
+          <div className="space-y-3">
+            <p className="font-bold text-gray-700 text-lg">📅 Weekly Reports</p>
+            {weeklyReports.map((report) => (
+              <WeeklyReport
+                key={report.weekNumber}
+                report={report}
+                onDownloadPDF={() => window.print()}
+              />
+            ))}
+          </div>
+        )}
+
         <Button
           data-ocid="dashboard.report.button"
           onClick={() => onNavigate("report")}
@@ -293,6 +347,15 @@ export default function Dashboard({
           className="w-full h-12 text-lg rounded-xl border-teal-300 text-teal-700 hover:bg-teal-50"
         >
           📊 View My Progress Report
+        </Button>
+
+        <Button
+          data-ocid="dashboard.change_password.button"
+          onClick={() => onNavigate("change-password")}
+          variant="outline"
+          className="w-full h-12 text-base rounded-xl border-amber-300 text-amber-700 hover:bg-amber-50"
+        >
+          🔑 Change My Password
         </Button>
 
         <Button

@@ -18,6 +18,7 @@ export interface StudentAccount {
   teacherId: string;
   grade: number;
   createdAt: number;
+  mustChangePassword?: boolean;
 }
 
 const TEACHERS_KEY = "classio_teachers";
@@ -100,6 +101,7 @@ export function useAuthStore() {
       ...data,
       studentId: generateStudentId(all),
       createdAt: Date.now(),
+      mustChangePassword: true,
     };
     const updated = [...all, newStudent];
     saveStudents(updated);
@@ -109,6 +111,17 @@ export function useAuthStore() {
 
   const removeStudent = (studentId: string) => {
     const updated = students.filter((s) => s.studentId !== studentId);
+    saveStudents(updated);
+    setStudents(updated);
+  };
+
+  const updateStudentPassword = (studentId: string, newPassword: string) => {
+    const all = loadStudents();
+    const updated = all.map((s) =>
+      s.studentId === studentId
+        ? { ...s, password: newPassword, mustChangePassword: false }
+        : s,
+    );
     saveStudents(updated);
     setStudents(updated);
   };
@@ -149,6 +162,7 @@ export function useAuthStore() {
     removeTeacher,
     addStudent,
     removeStudent,
+    updateStudentPassword,
     getStudentsByTeacher,
     generateStudentId: () => generateStudentId(loadStudents()),
     generateTeacherId: () => generateTeacherId(loadTeachers()),

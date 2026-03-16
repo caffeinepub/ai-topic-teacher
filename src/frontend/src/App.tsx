@@ -1,9 +1,8 @@
 import AppHeader from "@/components/AppHeader";
+import ChangePassword from "@/components/ChangePassword";
 import ComprehensionQuiz from "@/components/ComprehensionQuiz";
 import Dashboard from "@/components/Dashboard";
-import IntonationPractice from "@/components/IntonationPractice";
 import LoginPage from "@/components/LoginPage";
-import MissingWords from "@/components/MissingWords";
 import Onboarding from "@/components/Onboarding";
 import PassageReader from "@/components/PassageReader";
 import ProficiencyTest from "@/components/ProficiencyTest";
@@ -13,24 +12,32 @@ import ReadAndRecord from "@/components/ReadAndRecord";
 import type { WordResult } from "@/components/ReadAndRecord";
 import SuperAdminDashboard from "@/components/SuperAdminDashboard";
 import TeacherDashboard from "@/components/TeacherDashboard";
+import VocabBuilder from "@/components/VocabBuilder";
+import VocabPracticeTest from "@/components/VocabPracticeTest";
+import WeeklyVocabTest from "@/components/WeeklyVocabTest";
 import { Toaster } from "@/components/ui/sonner";
-import { getPassageByGrade, hasMorePassages } from "@/data/content";
-import type { TeacherAccount } from "@/store/useAuthStore";
+import { getPassageByGrade } from "@/data/content";
+import { getVocabByGrade } from "@/data/vocabData";
+import type { StudentAccount, TeacherAccount } from "@/store/useAuthStore";
+import type { WeeklyReportData } from "@/store/useStudentStore";
 import { findStudentProgress, useStudentStore } from "@/store/useStudentStore";
 import { getBadge } from "@/utils/badges";
+import { getDayInfo, getStartDayForGrade } from "@/utils/dayPlan";
 import { useState } from "react";
 
 type Screen =
   | "login"
   | "onboarding"
+  | "change-password"
   | "proficiency-test"
   | "dashboard"
   | "passage"
   | "quiz"
-  | "missing-words"
   | "pronunciation"
   | "record"
-  | "intonation"
+  | "vocab_learn"
+  | "vocab_test"
+  | "weekly_vocab_test"
   | "report"
   | "completed"
   | "teacher-dashboard"
@@ -43,9 +50,11 @@ export default function App() {
     restoreStudent,
     completeWithProficiency,
     addSession,
-    advancePassage,
+    advanceDay200,
     reset,
     averageScore,
+    saveVocabSentences,
+    addWeeklyReport,
   } = useStudentStore();
   const [screen, setScreen] = useState<Screen>(() => {
     if (!student.name) return "login";
@@ -54,6 +63,13 @@ export default function App() {
   });
   const [pendingName, setPendingName] = useState("");
   const [pendingStudentName, setPendingStudentName] = useState("");
+  const [pendingStudentAccount, setPendingStudentAccount] =
+    useState<StudentAccount | null>(null);
+  const [loggedInStudentAccount, setLoggedInStudentAccount] =
+    useState<StudentAccount | null>(null);
+  const [passwordChangeSource, setPasswordChangeSource] = useState<
+    "login" | "dashboard"
+  >("login");
   const [recordingWordResults, setRecordingWordResults] = useState<
     WordResult[]
   >([]);
@@ -61,8 +77,10 @@ export default function App() {
     null,
   );
 
-  const currentOffset = student.passageOffsets?.[student.grade] ?? 0;
-  const passage = getPassageByGrade(student.grade, currentOffset);
+  // Derive current passage from day200 plan
+  const currentDay200 = student.currentDay200 ?? 1;
+  const dayInfo = getDayInfo(currentDay200);
+  const passage = getPassageByGrade(dayInfo.grade, dayInfo.passageIndex);
 
   // Compute which activities are done for the current passage
   const completedActivities = student.sessions
@@ -73,7 +91,19 @@ export default function App() {
     _studentId: string,
     name: string,
     grade: number,
+    account?: StudentAccount,
   ) => {
+    if (account?.mustChangePassword) {
+      setPendingStudentAccount(account);
+      setPendingStudentName(name);
+      setPasswordChangeSource("login");
+      createStudent(name, grade);
+      setScreen("change-password");
+      return;
+    }
+
+    setLoggedInStudentAccount(account ?? null);
+
     const savedProgress = findStudentProgress(name);
     if (savedProgress?.proficiencyDone) {
       restoreStudent(savedProgress);
@@ -83,6 +113,30 @@ export default function App() {
     setPendingStudentName(name);
     createStudent(name, grade);
     setScreen("proficiency-test");
+  };
+
+  const handlePasswordChanged = () => {
+    if (passwordChangeSource === "dashboard") {
+      setScreen("dashboard");
+      return;
+    }
+    if (!pendingStudentAccount) return;
+    const name = pendingStudentAccount.name;
+    const savedProgress = findStudentProgress(name);
+    if (savedProgress?.proficiencyDone) {
+      restoreStudent(savedProgress);
+      setScreen("dashboard");
+      return;
+    }
+    setScreen("proficiency-test");
+  };
+
+  const handleChangePasswordFromDashboard = () => {
+    if (loggedInStudentAccount) {
+      setPendingStudentAccount(loggedInStudentAccount);
+    }
+    setPasswordChangeSource("dashboard");
+    setScreen("change-password");
   };
 
   const handleTeacherLogin = (teacher: TeacherAccount) => {
@@ -104,7 +158,8 @@ export default function App() {
     grade: number,
     score?: number,
   ) => {
-    completeWithProficiency(name, grade, score ?? 0);
+    const startDay = getStartDayForGrade(grade);
+    completeWithProficiency(name, grade, score ?? 0, startDay);
     setScreen("dashboard");
   };
 
@@ -115,31 +170,17 @@ export default function App() {
   ) => {
     addSession({
       passageId: passage.id,
-      grade: student.grade,
+      grade: dayInfo.grade,
       score,
       activity: "quiz",
       quizAnswers,
       passageTitle: passage.title,
       wordResults: recordingWordResults,
     });
-    // After quiz, always return to dashboard (not auto-advance)
-    setScreen("dashboard");
-    // Grade adaptation: if passed move up, if failed badly move down (handled by advancePassage inside store)
     if (passed) {
-      // Check if all 5 activities are now done for this passage
-      // We just completed quiz, other activities might still be pending
-      // so just go back to dashboard to continue the sequence
+      // nothing extra
     }
-  };
-
-  const handleMissingComplete = (score: number) => {
-    addSession({
-      passageId: passage.id,
-      grade: student.grade,
-      score,
-      activity: "missing-words",
-      passageTitle: passage.title,
-    });
+    advanceDay200();
     setScreen("dashboard");
   };
 
@@ -157,62 +198,131 @@ export default function App() {
         : 100;
     addSession({
       passageId: passage.id,
-      grade: student.grade,
+      grade: dayInfo.grade,
       score: accuracyScore,
       activity: "record",
       passageTitle: passage.title,
       wordResults,
       insertions,
     });
-    // Auto-advance to quiz after record (existing behavior)
+    advanceDay200();
     setScreen("quiz");
+  };
+
+  const handleVocabLearnComplete = (sentences: Record<string, string>) => {
+    saveVocabSentences(passage.id, sentences);
+    addSession({
+      passageId: passage.id,
+      grade: dayInfo.grade,
+      score: 100,
+      activity: "vocab_learn",
+      passageTitle: passage.title,
+    });
+    advanceDay200();
+    setScreen("dashboard");
+  };
+
+  const handleVocabTestComplete = (
+    score: number,
+    _answers: { word: string; correct: boolean }[],
+  ) => {
+    addSession({
+      passageId: passage.id,
+      grade: dayInfo.grade,
+      score,
+      activity: "vocab_test",
+      passageTitle: passage.title,
+    });
+    advanceDay200();
+    setScreen("dashboard");
   };
 
   const handlePronunciationComplete = () => {
     addSession({
       passageId: passage.id,
-      grade: student.grade,
+      grade: dayInfo.grade,
       score: 100,
       activity: "pronunciation",
       passageTitle: passage.title,
     });
+    advanceDay200();
     setScreen("dashboard");
   };
 
-  const handleIntonationComplete = () => {
+  const handleWeeklyVocabTestComplete = (score: number) => {
     addSession({
       passageId: passage.id,
-      grade: student.grade,
-      score: 100,
-      activity: "intonation",
+      grade: dayInfo.grade,
+      score,
+      activity: "weekly_vocab_test",
       passageTitle: passage.title,
     });
-    // After intonation (last activity), check if all 5 are done → advance passage
-    const allActivityIds = [
-      "record",
-      "quiz",
-      "missing-words",
-      "pronunciation",
-      "intonation",
-    ];
-    const doneAfterIntonation = [
-      ...completedActivities.filter((a) => a !== "intonation"),
-      "intonation",
-    ];
-    const allDone = allActivityIds.every((a) =>
-      doneAfterIntonation.includes(a),
+
+    // Build weekly report
+    const now = Date.now();
+    const weekStart = student.dayStartDate ?? now - 7 * 24 * 60 * 60 * 1000;
+    const readingSessions = student.sessions.filter(
+      (s) => s.activity === "record" && s.timestamp >= weekStart,
     );
-    if (allDone) {
-      advancePassage(student.grade);
-      const newOffset = currentOffset + 1;
-      if (!hasMorePassages(student.grade, newOffset)) {
-        setScreen("completed");
-      } else {
-        setScreen("dashboard");
-      }
-    } else {
-      setScreen("dashboard");
-    }
+    const quizSessions = student.sessions.filter(
+      (s) => s.activity === "quiz" && s.timestamp >= weekStart,
+    );
+    const vocabLearnCount = student.sessions.filter(
+      (s) => s.activity === "vocab_learn" && s.timestamp >= weekStart,
+    ).length;
+    const avgQuiz =
+      quizSessions.length > 0
+        ? Math.round(
+            quizSessions.reduce((a, s) => a + s.score, 0) / quizSessions.length,
+          )
+        : 0;
+    const comprehensionLevel =
+      avgQuiz >= 80 ? "Proficient" : avgQuiz >= 50 ? "Progressing" : "Beginner";
+    const readingScoresList = readingSessions.map((s) => s.score);
+    const prevReadingScores = student.sessions
+      .filter((s) => s.activity === "record" && s.timestamp < weekStart)
+      .map((s) => s.score);
+    const prevAvg =
+      prevReadingScores.length > 0
+        ? prevReadingScores.reduce((a, b) => a + b, 0) /
+          prevReadingScores.length
+        : null;
+    const currAvg =
+      readingScoresList.length > 0
+        ? readingScoresList.reduce((a, b) => a + b, 0) /
+          readingScoresList.length
+        : null;
+    const improvementTrend =
+      prevAvg === null || currAvg === null
+        ? "Steady"
+        : currAvg > prevAvg + 5
+          ? "Improving"
+          : currAvg < prevAvg - 5
+            ? "Declining"
+            : "Steady";
+
+    const weekNumber = (student.weeklyReports?.length ?? 0) + 1;
+    const report: WeeklyReportData = {
+      weekNumber,
+      startDate: new Date(weekStart).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+      }),
+      endDate: new Date(now).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      passagesCompleted: Math.max(1, Math.floor(vocabLearnCount)),
+      vocabWordsLearned: vocabLearnCount * 8,
+      weeklyTestScore: score,
+      readingScores: readingScoresList,
+      comprehensionScores: quizSessions.map((s) => s.score),
+      comprehensionLevel,
+      improvementTrend,
+    };
+    addWeeklyReport(report);
+    setScreen("dashboard");
   };
 
   const handleReset = () => {
@@ -224,6 +334,20 @@ export default function App() {
     setScreen("login");
   };
 
+  const handleDashboardNavigate = (s: string) => {
+    if (s === "change-password") {
+      handleChangePasswordFromDashboard();
+      return;
+    }
+    setScreen(s as Screen);
+  };
+
+  // Weekly vocab words = all vocab from current passage
+  const currentVocabWords = getVocabByGrade(
+    dayInfo.grade,
+    dayInfo.passageIndex,
+  );
+
   if (screen === "login") {
     return (
       <>
@@ -231,6 +355,19 @@ export default function App() {
           onStudentLogin={handleStudentLogin}
           onTeacherLogin={handleTeacherLogin}
           onSuperAdminLogin={handleSuperAdminLogin}
+        />
+        <Toaster />
+      </>
+    );
+  }
+
+  if (screen === "change-password" && pendingStudentAccount) {
+    return (
+      <>
+        <ChangePassword
+          studentId={pendingStudentAccount.studentId}
+          studentName={pendingStudentAccount.name}
+          onComplete={handlePasswordChanged}
         />
         <Toaster />
       </>
@@ -271,6 +408,7 @@ export default function App() {
     return (
       <ProficiencyTest
         name={pendingStudentName || pendingName}
+        startGrade={student.grade || 1}
         onComplete={handleProficiencyComplete}
       />
     );
@@ -335,16 +473,6 @@ export default function App() {
     );
   }
 
-  if (screen === "missing-words") {
-    return (
-      <MissingWords
-        passage={passage}
-        onComplete={handleMissingComplete}
-        onBack={() => setScreen("dashboard")}
-      />
-    );
-  }
-
   if (screen === "pronunciation") {
     return (
       <PronunciationPractice
@@ -355,21 +483,44 @@ export default function App() {
     );
   }
 
-  if (screen === "record") {
+  if (screen === "vocab_learn") {
     return (
-      <ReadAndRecord
-        passage={passage}
-        onComplete={handleRecordComplete}
+      <VocabBuilder
+        grade={dayInfo.grade}
+        passageIndex={dayInfo.passageIndex}
+        onComplete={handleVocabLearnComplete}
         onBack={() => setScreen("dashboard")}
       />
     );
   }
 
-  if (screen === "intonation") {
+  if (screen === "vocab_test") {
     return (
-      <IntonationPractice
+      <VocabPracticeTest
+        grade={dayInfo.grade}
+        passageIndex={dayInfo.passageIndex}
+        onComplete={handleVocabTestComplete}
+        onBack={() => setScreen("dashboard")}
+      />
+    );
+  }
+
+  if (screen === "weekly_vocab_test") {
+    return (
+      <WeeklyVocabTest
+        grade={dayInfo.grade}
+        weekWords={currentVocabWords}
+        onComplete={handleWeeklyVocabTestComplete}
+        onBack={() => setScreen("dashboard")}
+      />
+    );
+  }
+
+  if (screen === "record") {
+    return (
+      <ReadAndRecord
         passage={passage}
-        onComplete={handleIntonationComplete}
+        onComplete={handleRecordComplete}
         onBack={() => setScreen("dashboard")}
       />
     );
@@ -390,10 +541,11 @@ export default function App() {
   return (
     <Dashboard
       student={student}
-      onNavigate={(s) => setScreen(s as Screen)}
+      onNavigate={handleDashboardNavigate}
       onBackToHome={handleBackToHome}
       completedActivities={completedActivities}
       currentPassageTitle={passage.title}
+      currentDay200={currentDay200}
     />
   );
 }

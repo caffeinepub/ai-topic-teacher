@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { passages } from "@/data/content";
 import type { Session, StudentData } from "@/store/useStudentStore";
 import { getBadge, getBadgeLabel } from "@/utils/badges";
+import { Download } from "lucide-react";
 import { useState } from "react";
 
 type Screen =
@@ -76,6 +77,39 @@ const practiceActivities: {
   },
 ];
 
+// ── Comprehension Level Helper ──────────────────────────────────────────────
+function getComprehensionLevel(scorePercent: number): {
+  label: string;
+  color: string;
+  bg: string;
+  icon: string;
+  description: string;
+} {
+  if (scorePercent >= 80)
+    return {
+      label: "Proficient",
+      color: "text-green-700",
+      bg: "bg-green-100",
+      icon: "🌟",
+      description: "Excellent comprehension! Keep up the great work.",
+    };
+  if (scorePercent >= 50)
+    return {
+      label: "Progressing",
+      color: "text-amber-700",
+      bg: "bg-amber-100",
+      icon: "📈",
+      description: "Good effort! You are steadily improving.",
+    };
+  return {
+    label: "Beginner",
+    color: "text-red-700",
+    bg: "bg-red-100",
+    icon: "🌱",
+    description: "Keep practicing — every attempt helps you grow!",
+  };
+}
+
 function formatDate(ts: number) {
   return new Date(ts).toLocaleDateString("en-US", {
     month: "short",
@@ -115,6 +149,7 @@ function QuizSessionCard({ s, idx }: { s: Session; idx: number }) {
       ).length
     : 0;
   const totalQ = passageData?.questions.length ?? 5;
+  const level = getComprehensionLevel(s.score);
 
   return (
     <div
@@ -130,7 +165,14 @@ function QuizSessionCard({ s, idx }: { s: Session; idx: number }) {
             {formatDate(s.timestamp)}
           </p>
         </div>
-        <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+        <div className="flex items-center gap-2 ml-3 flex-shrink-0 flex-wrap justify-end">
+          {/* Per-attempt comprehension level badge */}
+          <span
+            className={`text-xs font-bold px-2 py-0.5 rounded-full ${level.bg} ${level.color}`}
+            title={`Reading level: ${level.label}`}
+          >
+            {level.icon} {level.label}
+          </span>
           <span
             className={`text-xs font-bold px-2 py-1 rounded-full ${passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
           >
@@ -364,6 +406,17 @@ export default function ProgressReport({
   const latestIntonation =
     intonationSessions[intonationSessions.length - 1] ?? null;
 
+  // ── Comprehension Level Calculation ─────────────────────────────────────
+  const avgQuizScore =
+    quizSessions.length > 0
+      ? Math.round(
+          quizSessions.reduce((sum, s) => sum + s.score, 0) /
+            quizSessions.length,
+        )
+      : null;
+  const comprehensionLevel =
+    avgQuizScore !== null ? getComprehensionLevel(avgQuizScore) : null;
+
   // Build chart data from all sessions (last 10)
   const chartSessions = allSessions.slice(-10);
   const activityColors: Record<string, string> = {
@@ -381,718 +434,897 @@ export default function ProgressReport({
     intonation: "I",
   };
 
-  return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-md mx-auto">
-        <AppHeader />
-        <div className="bg-amber-500 text-white px-4 pt-6 pb-6">
-          <button
-            type="button"
-            data-ocid="report.back.button"
-            onClick={onBack}
-            className="text-white/80 text-sm mb-3"
-          >
-            ← Back
-          </button>
-          <h2 className="font-display text-2xl font-bold">
-            📊 Activity Report
-          </h2>
-          <p className="text-white/70 text-sm mt-1">
-            {student.name}'s Learning Journey
-          </p>
-        </div>
+  const handleDownloadPDF = () => {
+    window.print();
+  };
 
-        <div className="p-4 space-y-5">
-          {/* ── STUDENT DASHBOARD ── */}
-          {/* Proficiency Test Card */}
-          {student.proficiencyDone && (student.proficiencyGrade ?? 0) > 0 && (
-            <div
-              className={`rounded-2xl border p-4 ${
-                (student.proficiencyScore ?? 0) >= 75
-                  ? "bg-green-50 border-green-200"
-                  : (student.proficiencyScore ?? 0) >= 50
-                    ? "bg-yellow-50 border-yellow-200"
-                    : "bg-orange-50 border-orange-200"
-              }`}
-              data-ocid="report.proficiency.card"
+  return (
+    <>
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; }
+          .print-content { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-white">
+        <div className="max-w-md mx-auto print-content">
+          <div className="no-print">
+            <AppHeader />
+          </div>
+          <div className="bg-amber-500 text-white px-4 pt-6 pb-6">
+            <button
+              type="button"
+              data-ocid="report.back.button"
+              onClick={onBack}
+              className="text-white/80 text-sm mb-3 no-print"
             >
-              <p className="font-bold text-sm uppercase tracking-wide mb-3 text-gray-700">
-                🎓 Proficiency Test Result
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <p
-                    className={`text-4xl font-extrabold ${
-                      (student.proficiencyScore ?? 0) >= 75
-                        ? "text-green-600"
-                        : (student.proficiencyScore ?? 0) >= 50
-                          ? "text-yellow-600"
-                          : "text-orange-500"
-                    }`}
-                  >
-                    {student.proficiencyScore ?? 0}%
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">Accuracy</p>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-700">
-                    Starting Badge:{" "}
-                    <span
-                      className={`inline-flex items-center gap-1 bg-gradient-to-br ${getBadge(student.proficiencyGrade ?? 1).gradient} text-white font-extrabold text-sm px-2 py-0.5 rounded-lg ml-1`}
+              ← Back
+            </button>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="font-display text-2xl font-bold">
+                  📊 Activity Report
+                </h2>
+                <p className="text-white/70 text-sm mt-1">
+                  {student.name}'s Learning Journey
+                </p>
+              </div>
+              {/* PDF Download button */}
+              <button
+                type="button"
+                data-ocid="report.download_pdf_button"
+                onClick={handleDownloadPDF}
+                className="no-print flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors mt-1 flex-shrink-0"
+                title="Download report as PDF"
+              >
+                <Download size={14} />
+                Save PDF
+              </button>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-5">
+            {/* ── STUDENT DASHBOARD ── */}
+            {/* Proficiency Test Card */}
+            {student.proficiencyDone && (student.proficiencyGrade ?? 0) > 0 && (
+              <div
+                className={`rounded-2xl border p-4 ${
+                  (student.proficiencyScore ?? 0) >= 75
+                    ? "bg-green-50 border-green-200"
+                    : (student.proficiencyScore ?? 0) >= 50
+                      ? "bg-yellow-50 border-yellow-200"
+                      : "bg-orange-50 border-orange-200"
+                }`}
+                data-ocid="report.proficiency.card"
+              >
+                <p className="font-bold text-sm uppercase tracking-wide mb-3 text-gray-700">
+                  🎓 Proficiency Test Result
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <p
+                      className={`text-4xl font-extrabold ${
+                        (student.proficiencyScore ?? 0) >= 75
+                          ? "text-green-600"
+                          : (student.proficiencyScore ?? 0) >= 50
+                            ? "text-yellow-600"
+                            : "text-orange-500"
+                      }`}
                     >
-                      {getBadge(student.proficiencyGrade ?? 1).emoji}{" "}
-                      {getBadge(student.proficiencyGrade ?? 1).name}
-                    </span>
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {(student.proficiencyScore ?? 0) >= 75
-                      ? "Excellent reading ability!"
-                      : (student.proficiencyScore ?? 0) >= 50
-                        ? "Good start — keep practising!"
-                        : "Building strong foundations!"}
-                  </p>
+                      {student.proficiencyScore ?? 0}%
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">Accuracy</p>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-700">
+                      Starting Badge:{" "}
+                      <span
+                        className={`inline-flex items-center gap-1 bg-gradient-to-br ${getBadge(student.proficiencyGrade ?? 1).gradient} text-white font-extrabold text-sm px-2 py-0.5 rounded-lg ml-1`}
+                      >
+                        {getBadge(student.proficiencyGrade ?? 1).emoji}{" "}
+                        {getBadge(student.proficiencyGrade ?? 1).name}
+                      </span>
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {(student.proficiencyScore ?? 0) >= 75
+                        ? "Excellent reading ability!"
+                        : (student.proficiencyScore ?? 0) >= 50
+                          ? "Good start — keep practising!"
+                          : "Building strong foundations!"}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Adaptive Learning Timeline */}
-          {(student.gradeHistory ?? []).length > 0 && (
+            {/* Adaptive Learning Timeline */}
+            {(student.gradeHistory ?? []).length > 0 && (
+              <div
+                className="bg-blue-50 border border-blue-200 rounded-2xl p-4"
+                data-ocid="report.grade-history.panel"
+              >
+                <p className="font-bold text-blue-800 text-sm uppercase tracking-wide mb-3">
+                  📈 Adaptive Learning Path
+                </p>
+                <div className="relative pl-4">
+                  <div className="absolute left-1.5 top-0 bottom-0 w-0.5 bg-blue-200" />
+                  {(student.gradeHistory ?? []).map((entry, i) => {
+                    const isCurrent =
+                      i === (student.gradeHistory ?? []).length - 1;
+                    return (
+                      <div
+                        key={String(entry.timestamp) + String(i)}
+                        className={`relative flex items-start gap-3 mb-3 last:mb-0 ${isCurrent ? "opacity-100" : "opacity-70"}`}
+                        data-ocid={[
+                          "report",
+                          "grade-history",
+                          "item",
+                          String(i + 1),
+                        ].join(".")}
+                      >
+                        <div
+                          className={`absolute -left-4 w-3 h-3 rounded-full border-2 border-white ${isCurrent ? "bg-blue-500" : "bg-blue-300"}`}
+                          style={{ top: "4px" }}
+                        />
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              isCurrent
+                                ? "bg-blue-500 text-white"
+                                : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {getBadge(entry.grade).emoji}{" "}
+                            {getBadge(entry.grade).name}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {entry.reason}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(entry.timestamp).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
+                          </span>
+                          {isCurrent && (
+                            <span className="text-xs font-bold text-blue-500">
+                              (Current)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Module Summary Grid */}
             <div
-              className="bg-blue-50 border border-blue-200 rounded-2xl p-4"
-              data-ocid="report.grade-history.panel"
+              className="rounded-2xl border border-gray-200 p-4"
+              data-ocid="report.modules.panel"
             >
-              <p className="font-bold text-blue-800 text-sm uppercase tracking-wide mb-3">
-                📈 Adaptive Learning Path
+              <p className="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">
+                📚 Module Summary
               </p>
-              <div className="relative pl-4">
-                <div className="absolute left-1.5 top-0 bottom-0 w-0.5 bg-blue-200" />
-                {(student.gradeHistory ?? []).map((entry, i) => {
-                  const isCurrent =
-                    i === (student.gradeHistory ?? []).length - 1;
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  {
+                    key: "record",
+                    icon: "🎤",
+                    label: "Read & Record",
+                    color: "bg-amber-50 border-amber-200 text-amber-700",
+                  },
+                  {
+                    key: "quiz",
+                    icon: "📝",
+                    label: "Read & Quiz",
+                    color: "bg-blue-50 border-blue-200 text-blue-700",
+                  },
+                  {
+                    key: "missing-words",
+                    icon: "✏️",
+                    label: "Missing Words",
+                    color: "bg-yellow-50 border-yellow-200 text-yellow-700",
+                  },
+                  {
+                    key: "pronunciation",
+                    icon: "🗣️",
+                    label: "Pronunciation",
+                    color: "bg-purple-50 border-purple-200 text-purple-700",
+                  },
+                  {
+                    key: "intonation",
+                    icon: "🎵",
+                    label: "Intonation",
+                    color: "bg-green-50 border-green-200 text-green-700",
+                  },
+                ].map((mod) => {
+                  const modSessions = allSessions.filter(
+                    (s) => s.activity === mod.key,
+                  );
+                  const lastSession = modSessions[modSessions.length - 1];
                   return (
                     <div
-                      key={String(entry.timestamp) + String(i)}
-                      className={`relative flex items-start gap-3 mb-3 last:mb-0 ${isCurrent ? "opacity-100" : "opacity-70"}`}
+                      key={mod.key}
+                      className={[
+                        "flex flex-col items-center text-center rounded-xl border p-2 gap-1",
+                        mod.color,
+                      ].join(" ")}
                       data-ocid={[
                         "report",
-                        "grade-history",
-                        "item",
-                        String(i + 1),
+                        "module",
+                        mod.key.replace("-", "-"),
+                        "card",
                       ].join(".")}
                     >
-                      <div
-                        className={`absolute -left-4 w-3 h-3 rounded-full border-2 border-white ${isCurrent ? "bg-blue-500" : "bg-blue-300"}`}
-                        style={{ top: "4px" }}
-                      />
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                            isCurrent
-                              ? "bg-blue-500 text-white"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {getBadge(entry.grade).emoji}{" "}
-                          {getBadge(entry.grade).name}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {entry.reason}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {new Date(entry.timestamp).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                            },
-                          )}
-                        </span>
-                        {isCurrent && (
-                          <span className="text-xs font-bold text-blue-500">
-                            (Current)
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-lg">{mod.icon}</span>
+                      <span className="text-xs font-semibold leading-tight">
+                        {mod.label}
+                      </span>
+                      <span className="text-xs font-bold">
+                        {modSessions.length} sessions
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {lastSession ? `${lastSession.score}%` : "Not started"}
+                      </span>
                     </div>
                   );
                 })}
               </div>
             </div>
-          )}
 
-          {/* Module Summary Grid */}
-          <div
-            className="rounded-2xl border border-gray-200 p-4"
-            data-ocid="report.modules.panel"
-          >
-            <p className="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">
-              📚 Module Summary
-            </p>
-            <div className="grid grid-cols-5 gap-2">
-              {[
-                {
-                  key: "record",
-                  icon: "🎤",
-                  label: "Read & Record",
-                  color: "bg-amber-50 border-amber-200 text-amber-700",
-                },
-                {
-                  key: "quiz",
-                  icon: "📝",
-                  label: "Read & Quiz",
-                  color: "bg-blue-50 border-blue-200 text-blue-700",
-                },
-                {
-                  key: "missing-words",
-                  icon: "✏️",
-                  label: "Missing Words",
-                  color: "bg-yellow-50 border-yellow-200 text-yellow-700",
-                },
-                {
-                  key: "pronunciation",
-                  icon: "🗣️",
-                  label: "Pronunciation",
-                  color: "bg-purple-50 border-purple-200 text-purple-700",
-                },
-                {
-                  key: "intonation",
-                  icon: "🎵",
-                  label: "Intonation",
-                  color: "bg-green-50 border-green-200 text-green-700",
-                },
-              ].map((mod) => {
-                const modSessions = allSessions.filter(
-                  (s) => s.activity === mod.key,
-                );
-                const lastSession = modSessions[modSessions.length - 1];
-                return (
-                  <div
-                    key={mod.key}
-                    className={[
-                      "flex flex-col items-center text-center rounded-xl border p-2 gap-1",
-                      mod.color,
-                    ].join(" ")}
-                    data-ocid={[
-                      "report",
-                      "module",
-                      mod.key.replace("-", "-"),
-                      "card",
-                    ].join(".")}
-                  >
-                    <span className="text-lg">{mod.icon}</span>
-                    <span className="text-xs font-semibold leading-tight">
-                      {mod.label}
+            {/* ── READING & COMPREHENSION LEVEL ── */}
+            <div
+              data-ocid="report.comprehension_level.card"
+              className="rounded-2xl border border-teal-200 bg-teal-50 p-4"
+            >
+              <p className="font-bold text-teal-800 text-sm uppercase tracking-wide mb-3">
+                📖 Reading &amp; Comprehension Level
+              </p>
+              {comprehensionLevel !== null && avgQuizScore !== null ? (
+                <div className="flex items-center gap-4">
+                  {/* Level badge */}
+                  <div className="flex flex-col items-center gap-1">
+                    <span
+                      className={`text-3xl font-extrabold px-4 py-2 rounded-2xl ${comprehensionLevel.bg} ${comprehensionLevel.color} shadow-sm`}
+                    >
+                      {comprehensionLevel.icon} {comprehensionLevel.label}
                     </span>
-                    <span className="text-xs font-bold">
-                      {modSessions.length} sessions
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {lastSession ? `${lastSession.score}%` : "Not started"}
+                    <span className="text-xs text-gray-500 font-medium mt-1">
+                      Avg Quiz Score: {avgQuizScore}%
                     </span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── OVERALL SUMMARY ── */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <p className="font-bold text-amber-800 text-sm uppercase tracking-wide mb-3">
-              📋 Overall Summary
-            </p>
-            <div className="grid grid-cols-3 gap-3 mb-3">
-              <div className="bg-white rounded-xl p-3 text-center shadow-sm flex flex-col items-center gap-1">
-                <div
-                  className={`bg-gradient-to-br ${getBadge(student.grade).gradient} px-2 py-1 rounded-lg flex items-center gap-1`}
-                >
-                  <span className="text-xl">
-                    {getBadge(student.grade).emoji}
-                  </span>
-                  <span className="text-white font-extrabold text-xs">
-                    {getBadge(student.grade).name}
-                  </span>
+                  {/* Description */}
+                  <div className="flex-1">
+                    <p
+                      className={`text-sm font-semibold ${comprehensionLevel.color}`}
+                    >
+                      {comprehensionLevel.description}
+                    </p>
+                    <div className="mt-2 flex flex-col gap-1">
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+                        Beginner: below 50%
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+                        Progressing: 50–79%
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                        Proficient: 80% and above
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-gray-500 text-xs mt-0.5">Badge</p>
-              </div>
-              <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <p className="text-3xl font-bold text-green-600">
-                  {allSessions.length}
-                </p>
-                <p className="text-gray-500 text-xs mt-1">Sessions</p>
-              </div>
-              <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <p className="text-3xl font-bold text-purple-600">
-                  {averageScore}%
-                </p>
-                <p className="text-gray-500 text-xs mt-1">Avg Score</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 font-medium">Trend:</span>
-              <TrendBadge sessions={allSessions} />
-              {allSessions.length < 4 && (
-                <span className="text-xs text-gray-400">
-                  Complete more sessions for trend
-                </span>
+              ) : (
+                <div className="text-center py-4 text-gray-400 text-sm">
+                  Not yet assessed — complete a Read &amp; Quiz session to see
+                  your level.
+                </div>
               )}
             </div>
-          </div>
 
-          {/* ── PROGRESS CHART ── */}
-          {chartSessions.length > 0 && (
-            <div className="bg-gray-50 rounded-2xl p-4">
-              <p className="font-semibold text-gray-700 mb-1">
-                📈 Score History
+            {/* ── OVERALL SUMMARY ── */}
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+              <p className="font-bold text-amber-800 text-sm uppercase tracking-wide mb-3">
+                📋 Overall Summary
               </p>
-              <p className="text-xs text-gray-400 mb-3">
-                <span className="inline-flex items-center gap-1 mr-2">
-                  <span
-                    className="w-2 h-2 rounded-sm inline-block"
-                    style={{ background: "#f59e0b" }}
-                  />
-                  RR=Read&amp;Record
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="bg-white rounded-xl p-3 text-center shadow-sm flex flex-col items-center gap-1">
+                  <div
+                    className={`bg-gradient-to-br ${getBadge(student.grade).gradient} px-2 py-1 rounded-lg flex items-center gap-1`}
+                  >
+                    <span className="text-xl">
+                      {getBadge(student.grade).emoji}
+                    </span>
+                    <span className="text-white font-extrabold text-xs">
+                      {getBadge(student.grade).name}
+                    </span>
+                  </div>
+                  <p className="text-gray-500 text-xs mt-0.5">Badge</p>
+                </div>
+                <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+                  <p className="text-3xl font-bold text-green-600">
+                    {allSessions.length}
+                  </p>
+                  <p className="text-gray-500 text-xs mt-1">Sessions</p>
+                </div>
+                <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+                  <p className="text-3xl font-bold text-purple-600">
+                    {averageScore}%
+                  </p>
+                  <p className="text-gray-500 text-xs mt-1">Avg Score</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 font-medium">
+                  Trend:
                 </span>
-                <span className="inline-flex items-center gap-1 mr-2">
-                  <span
-                    className="w-2 h-2 rounded-sm inline-block"
-                    style={{ background: "#3b82f6" }}
-                  />
-                  Q=Quiz
-                </span>
-                <span className="inline-flex items-center gap-1 mr-2">
-                  <span
-                    className="w-2 h-2 rounded-sm inline-block"
-                    style={{ background: "#a855f7" }}
-                  />
-                  P=Pronunciation
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <span
-                    className="w-2 h-2 rounded-sm inline-block"
-                    style={{ background: "#22c55e" }}
-                  />
-                  I=Intonation
-                </span>
-              </p>
-              <div className="flex items-end gap-1.5 h-24">
-                {chartSessions.map((s, i) => (
-                  <ActivityBar
-                    // biome-ignore lint/suspicious/noArrayIndexKey: chart stable
-                    key={`chart-${i}`}
-                    label={activityLabels[s.activity] ?? "?"}
-                    score={s.score}
-                    color={activityColors[s.activity] ?? "#9ca3af"}
-                  />
-                ))}
+                <TrendBadge sessions={allSessions} />
+                {allSessions.length < 4 && (
+                  <span className="text-xs text-gray-400">
+                    Complete more sessions for trend
+                  </span>
+                )}
               </div>
             </div>
-          )}
 
-          {/* ── READ & RECORD ── */}
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
-            <p className="font-bold text-amber-800 text-sm uppercase tracking-wide mb-3">
-              🎤 Read &amp; Record
-            </p>
-            {latestRecord ? (
-              <div className="space-y-3">
-                {prevRecord && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-500">
-                      Last time:{" "}
-                      <span className="font-semibold">{prevRecord.score}%</span>
-                    </span>
-                    <span className="text-gray-400">→</span>
-                    <span className="text-gray-700">
-                      This time:{" "}
-                      <span
-                        className={`font-bold ${latestRecord.score >= prevRecord.score ? "text-green-600" : "text-red-500"}`}
-                      >
-                        {latestRecord.score}%
+            {/* ── PROGRESS CHART ── */}
+            {chartSessions.length > 0 && (
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="font-semibold text-gray-700 mb-1">
+                  📈 Score History
+                </p>
+                <p className="text-xs text-gray-400 mb-3">
+                  <span className="inline-flex items-center gap-1 mr-2">
+                    <span
+                      className="w-2 h-2 rounded-sm inline-block"
+                      style={{ background: "#f59e0b" }}
+                    />
+                    RR=Read&amp;Record
+                  </span>
+                  <span className="inline-flex items-center gap-1 mr-2">
+                    <span
+                      className="w-2 h-2 rounded-sm inline-block"
+                      style={{ background: "#3b82f6" }}
+                    />
+                    Q=Quiz
+                  </span>
+                  <span className="inline-flex items-center gap-1 mr-2">
+                    <span
+                      className="w-2 h-2 rounded-sm inline-block"
+                      style={{ background: "#a855f7" }}
+                    />
+                    P=Pronunciation
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span
+                      className="w-2 h-2 rounded-sm inline-block"
+                      style={{ background: "#22c55e" }}
+                    />
+                    I=Intonation
+                  </span>
+                </p>
+                <div className="flex items-end gap-1.5 h-24">
+                  {chartSessions.map((s, i) => (
+                    <ActivityBar
+                      // biome-ignore lint/suspicious/noArrayIndexKey: chart stable
+                      key={`chart-${i}`}
+                      label={activityLabels[s.activity] ?? "?"}
+                      score={s.score}
+                      color={activityColors[s.activity] ?? "#9ca3af"}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── READ & RECORD ── */}
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+              <p className="font-bold text-amber-800 text-sm uppercase tracking-wide mb-3">
+                🎤 Read &amp; Record
+              </p>
+              {latestRecord ? (
+                <div className="space-y-3">
+                  {prevRecord && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-500">
+                        Last time:{" "}
+                        <span className="font-semibold">
+                          {prevRecord.score}%
+                        </span>
                       </span>
-                    </span>
-                    {latestRecord.score >= prevRecord.score ? (
-                      <span className="text-green-600 text-xs">
-                        ↑ Improved!
+                      <span className="text-gray-400">→</span>
+                      <span className="text-gray-700">
+                        This time:{" "}
+                        <span
+                          className={`font-bold ${latestRecord.score >= prevRecord.score ? "text-green-600" : "text-red-500"}`}
+                        >
+                          {latestRecord.score}%
+                        </span>
                       </span>
-                    ) : (
-                      <span className="text-red-500 text-xs">
-                        ↓ Keep practicing
-                      </span>
-                    )}
+                      {latestRecord.score >= prevRecord.score ? (
+                        <span className="text-green-600 text-xs">
+                          ↑ Improved!
+                        </span>
+                      ) : (
+                        <span className="text-red-500 text-xs">
+                          ↓ Keep practicing
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Consolidated Speech Feedback ── */}
+                  <div
+                    className="bg-white rounded-xl p-3 border border-amber-100 space-y-3"
+                    data-ocid="report.record.panel"
+                  >
+                    <p className="text-xs text-gray-500 font-semibold">
+                      {latestRecord.passageTitle || "Passage"} —{" "}
+                      {formatDate(latestRecord.timestamp)}
+                    </p>
+
+                    {/* Stats row */}
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <div className="text-center bg-green-50 rounded-lg p-2">
+                        <p className="text-lg font-bold text-green-600">
+                          {latestRecord.score}%
+                        </p>
+                        <p className="text-xs text-gray-400">Accuracy</p>
+                      </div>
+                      <div className="text-center bg-orange-50 rounded-lg p-2">
+                        <p className="text-lg font-bold text-orange-500">
+                          {latestRecord.wordResults?.filter(
+                            (w) => w.status === "mispronounced",
+                          ).length ?? 0}
+                        </p>
+                        <p className="text-xs text-gray-400">Mispron.</p>
+                      </div>
+                      <div className="text-center bg-red-50 rounded-lg p-2">
+                        <p className="text-lg font-bold text-red-500">
+                          {latestRecord.wordResults?.filter(
+                            (w) => w.status === "missed",
+                          ).length ?? 0}
+                        </p>
+                        <p className="text-xs text-gray-400">Missed</p>
+                      </div>
+                      <div className="text-center bg-blue-50 rounded-lg p-2">
+                        <p className="text-lg font-bold text-blue-500">
+                          {latestRecord.insertions?.length ?? 0}
+                        </p>
+                        <p className="text-xs text-gray-400">Extra Words</p>
+                      </div>
+                    </div>
+
+                    {/* Summary sentence */}
+                    <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
+                      <span className="font-semibold">Summary:</span>{" "}
+                      {latestRecord.wordResults?.filter(
+                        (w) => w.status === "mispronounced",
+                      ).length ?? 0}{" "}
+                      mispronounced,{" "}
+                      {latestRecord.wordResults?.filter(
+                        (w) => w.status === "missed",
+                      ).length ?? 0}{" "}
+                      missed, {latestRecord.insertions?.length ?? 0} extra words
+                      inserted.
+                    </p>
+
+                    {latestRecord.wordResults &&
+                      latestRecord.wordResults.length > 0 && (
+                        <>
+                          {/* Word breakdown chips */}
+                          <div>
+                            <p className="text-xs font-semibold text-gray-500 mb-1.5">
+                              Word Breakdown:
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              {latestRecord.wordResults.map((w, wi) => (
+                                <WordChip
+                                  // biome-ignore lint/suspicious/noArrayIndexKey: stable
+                                  key={`wr-${wi}`}
+                                  word={w.original}
+                                  status={w.status}
+                                  heard={w.heard}
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Mispronounced */}
+                          {latestRecord.wordResults.some(
+                            (w) => w.status === "mispronounced",
+                          ) && (
+                            <div className="bg-orange-50 rounded-lg p-2">
+                              <p className="text-xs font-bold text-orange-700 mb-1.5">
+                                🔶 Mispronounced Words:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {latestRecord.wordResults
+                                  .filter((w) => w.status === "mispronounced")
+                                  .map((w, i) => (
+                                    <span
+                                      // biome-ignore lint/suspicious/noArrayIndexKey: stable
+                                      key={`mp-${i}`}
+                                      className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-lg font-medium border border-orange-300"
+                                      title={
+                                        w.heard ? `You said: "${w.heard}"` : ""
+                                      }
+                                    >
+                                      {w.original}
+                                      {w.heard && (
+                                        <span className="text-orange-500 ml-1">
+                                          ({w.heard})
+                                        </span>
+                                      )}
+                                    </span>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Missed */}
+                          {latestRecord.wordResults.some(
+                            (w) => w.status === "missed",
+                          ) && (
+                            <div className="bg-red-50 rounded-lg p-2">
+                              <p className="text-xs font-bold text-red-700 mb-1.5">
+                                🔴 Missed Words:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {latestRecord.wordResults
+                                  .filter((w) => w.status === "missed")
+                                  .map((w, i) => (
+                                    <span
+                                      // biome-ignore lint/suspicious/noArrayIndexKey: stable
+                                      key={`ms-${i}`}
+                                      className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-lg line-through font-medium border border-red-300"
+                                    >
+                                      {w.original}
+                                    </span>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Insertions */}
+                          {(latestRecord.insertions?.length ?? 0) > 0 && (
+                            <div className="bg-blue-50 rounded-lg p-2">
+                              <p className="text-xs font-bold text-blue-700 mb-1.5">
+                                🔵 Extra Words Inserted:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {(latestRecord.insertions ?? []).map(
+                                  (word, i) => (
+                                    <span
+                                      // biome-ignore lint/suspicious/noArrayIndexKey: stable
+                                      key={`ins-${i}`}
+                                      className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-lg font-medium border border-blue-300"
+                                    >
+                                      +{word}
+                                    </span>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
                   </div>
-                )}
 
-                {/* ── Consolidated Speech Feedback ── */}
+                  {/* Legend */}
+                  <div className="flex gap-3 text-xs text-gray-400 flex-wrap">
+                    <span>
+                      <span className="inline-block w-2 h-2 rounded-sm bg-green-400 mr-1" />
+                      Correct
+                    </span>
+                    <span>
+                      <span className="inline-block w-2 h-2 rounded-sm bg-orange-400 mr-1" />
+                      Mispronounced
+                    </span>
+                    <span>
+                      <span className="inline-block w-2 h-2 rounded-sm bg-red-400 mr-1" />
+                      Missed
+                    </span>
+                    <span>
+                      <span className="inline-block w-2 h-2 rounded-sm bg-blue-400 mr-1" />
+                      Extra
+                    </span>
+                  </div>
+
+                  {/* All sessions history */}
+                  {recordSessions.length > 1 && (
+                    <AllRecordSessionsPanel sessions={recordSessions} />
+                  )}
+                </div>
+              ) : (
                 <div
-                  className="bg-white rounded-xl p-3 border border-amber-100 space-y-3"
-                  data-ocid="report.record.panel"
+                  data-ocid="report.record.empty_state"
+                  className="text-center py-6 text-gray-400 text-sm"
                 >
-                  <p className="text-xs text-gray-500 font-semibold">
-                    {latestRecord.passageTitle || "Passage"} —{" "}
-                    {formatDate(latestRecord.timestamp)}
-                  </p>
+                  No recording sessions yet. Try Read &amp; Record!
+                </div>
+              )}
+            </div>
 
-                  {/* Stats row */}
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <div className="text-center bg-green-50 rounded-lg p-2">
-                      <p className="text-lg font-bold text-green-600">
-                        {latestRecord.score}%
-                      </p>
-                      <p className="text-xs text-gray-400">Accuracy</p>
-                    </div>
-                    <div className="text-center bg-orange-50 rounded-lg p-2">
-                      <p className="text-lg font-bold text-orange-500">
-                        {latestRecord.wordResults?.filter(
-                          (w) => w.status === "mispronounced",
-                        ).length ?? 0}
-                      </p>
-                      <p className="text-xs text-gray-400">Mispron.</p>
-                    </div>
-                    <div className="text-center bg-red-50 rounded-lg p-2">
-                      <p className="text-lg font-bold text-red-500">
-                        {latestRecord.wordResults?.filter(
-                          (w) => w.status === "missed",
-                        ).length ?? 0}
-                      </p>
-                      <p className="text-xs text-gray-400">Missed</p>
-                    </div>
-                    <div className="text-center bg-blue-50 rounded-lg p-2">
-                      <p className="text-lg font-bold text-blue-500">
-                        {latestRecord.insertions?.length ?? 0}
-                      </p>
-                      <p className="text-xs text-gray-400">Extra Words</p>
-                    </div>
+            {/* ── READ & QUIZ ── */}
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+              <p className="font-bold text-blue-800 text-sm uppercase tracking-wide mb-3">
+                📖 Read &amp; Quiz
+              </p>
+              {latestQuiz ? (
+                <QuizSessionCard s={latestQuiz} idx={0} />
+              ) : (
+                <div
+                  data-ocid="report.quiz.empty_state"
+                  className="text-center py-6 text-gray-400 text-sm"
+                >
+                  No quiz attempts yet. Start a Read &amp; Quiz session!
+                </div>
+              )}
+            </div>
+
+            {/* ── MISSING WORDS ── */}
+            <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-4">
+              <p className="font-bold text-yellow-800 text-sm uppercase tracking-wide mb-3">
+                ✏️ Missing Words
+              </p>
+              {latestMissing ? (
+                <div
+                  data-ocid="report.missing-words.item.1"
+                  className="bg-white rounded-xl border border-yellow-100 px-4 py-3 flex items-center justify-between shadow-sm"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">
+                      {latestMissing.passageTitle || "Passage"}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {formatDate(latestMissing.timestamp)}
+                    </p>
                   </div>
+                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
+                    ✓ Completed
+                  </span>
+                </div>
+              ) : (
+                <div
+                  data-ocid="report.missing-words.empty_state"
+                  className="text-center py-6 text-gray-400 text-sm"
+                >
+                  No Missing Words attempts yet.
+                </div>
+              )}
+            </div>
 
-                  {/* Summary sentence */}
-                  <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
-                    <span className="font-semibold">Summary:</span>{" "}
-                    {latestRecord.wordResults?.filter(
-                      (w) => w.status === "mispronounced",
-                    ).length ?? 0}{" "}
-                    mispronounced,{" "}
-                    {latestRecord.wordResults?.filter(
-                      (w) => w.status === "missed",
-                    ).length ?? 0}{" "}
-                    missed, {latestRecord.insertions?.length ?? 0} extra words
-                    inserted.
+            {/* ── PRONUNCIATION ── */}
+            <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
+              <p className="font-bold text-purple-800 text-sm uppercase tracking-wide mb-3">
+                🗣️ Pronunciation
+              </p>
+              {latestPronunciation ? (
+                <div
+                  data-ocid="report.pronunciation.item.1"
+                  className="bg-white rounded-xl border border-purple-100 px-4 py-3 flex items-center justify-between shadow-sm"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">
+                      {latestPronunciation.passageTitle || "Passage"}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {formatDate(latestPronunciation.timestamp)}
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
+                    ✓ Completed
+                  </span>
+                </div>
+              ) : (
+                <div
+                  data-ocid="report.pronunciation.empty_state"
+                  className="text-center py-6 text-gray-400 text-sm"
+                >
+                  No Pronunciation sessions yet.
+                </div>
+              )}
+            </div>
+
+            {/* ── INTONATION ── */}
+            <div className="bg-green-50 border border-green-100 rounded-2xl p-4">
+              <p className="font-bold text-green-800 text-sm uppercase tracking-wide mb-3">
+                🎵 Intonation
+              </p>
+              {latestIntonation ? (
+                <div
+                  data-ocid="report.intonation.item.1"
+                  className="bg-white rounded-xl border border-green-100 px-4 py-3 flex items-center justify-between shadow-sm"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">
+                      {latestIntonation.passageTitle || "Passage"}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {formatDate(latestIntonation.timestamp)}
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
+                    ✓ Completed
+                  </span>
+                </div>
+              ) : (
+                <div
+                  data-ocid="report.intonation.empty_state"
+                  className="text-center py-6 text-gray-400 text-sm"
+                >
+                  No Intonation sessions yet.
+                </div>
+              )}
+            </div>
+
+            {/* ── PRACTICE ACTIVITIES ── */}
+            {onNavigate && (
+              <div className="bg-gray-50 rounded-2xl p-4 no-print">
+                <p className="font-semibold text-gray-700 mb-3">
+                  🎯 Practice Activities
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {practiceActivities.map((a, idx) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      data-ocid={`report.activity.button.${idx + 1}`}
+                      onClick={() => onNavigate(a.id)}
+                      className={`${a.color} border-2 rounded-xl p-3 text-left flex items-center gap-2 hover:scale-[1.02] transition-all`}
+                    >
+                      <span className="text-xl">{a.icon}</span>
+                      <p className={`font-semibold text-xs ${a.textColor}`}>
+                        {a.title}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── VOCABULARY PROGRESS ── */}
+            {(() => {
+              const vocabLearnSessions = allSessions.filter(
+                (s) => s.activity === "vocab_learn",
+              );
+              const vocabTestSessions = allSessions.filter(
+                (s) => s.activity === "vocab_test",
+              );
+              const avgVocabTest =
+                vocabTestSessions.length > 0
+                  ? Math.round(
+                      vocabTestSessions.reduce((a, s) => a + s.score, 0) /
+                        vocabTestSessions.length,
+                    )
+                  : null;
+              const totalVocabWords = vocabLearnSessions.length * 8;
+              const allSentences = Object.values(
+                student.vocabSentences ?? {},
+              ).flatMap((passageSentences) =>
+                Object.entries(passageSentences as Record<string, string>).map(
+                  ([word, sentence]) => ({ word, sentence }),
+                ),
+              );
+              return (
+                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
+                  <p className="font-bold text-indigo-800 text-sm uppercase tracking-wide mb-3">
+                    📚 Vocabulary Progress
                   </p>
-
-                  {latestRecord.wordResults &&
-                    latestRecord.wordResults.length > 0 && (
-                      <>
-                        {/* Word breakdown chips */}
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 mb-1.5">
-                            Word Breakdown:
+                  {vocabLearnSessions.length === 0 ? (
+                    <div
+                      data-ocid="report.vocab.empty_state"
+                      className="text-center py-6 text-gray-400 text-sm"
+                    >
+                      No vocabulary sessions yet. Complete Vocabulary Learn!
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white rounded-xl p-3 text-center border border-indigo-100">
+                          <p className="text-2xl font-extrabold text-indigo-700">
+                            {totalVocabWords}
                           </p>
-                          <div className="flex flex-wrap gap-1.5 mb-3">
-                            {latestRecord.wordResults.map((w, wi) => (
-                              <WordChip
-                                // biome-ignore lint/suspicious/noArrayIndexKey: stable
-                                key={`wr-${wi}`}
-                                word={w.original}
-                                status={w.status}
-                                heard={w.heard}
-                              />
+                          <p className="text-xs text-indigo-600 font-semibold">
+                            Words Learned
+                          </p>
+                        </div>
+                        <div className="bg-white rounded-xl p-3 text-center border border-indigo-100">
+                          <p className="text-2xl font-extrabold text-purple-700">
+                            {avgVocabTest !== null ? `${avgVocabTest}%` : "—"}
+                          </p>
+                          <p className="text-xs text-purple-600 font-semibold">
+                            Avg Practice Score
+                          </p>
+                        </div>
+                      </div>
+                      {allSentences.length > 0 && (
+                        <div className="bg-white rounded-xl p-3 border border-indigo-100">
+                          <p className="font-semibold text-gray-700 text-sm mb-2">
+                            ✏️ Your Sentences
+                          </p>
+                          <div className="space-y-2">
+                            {allSentences.slice(0, 5).map((item, i) => (
+                              <div
+                                key={`${item.word}-${i}`}
+                                className="bg-indigo-50 rounded-lg px-3 py-2"
+                              >
+                                <span className="text-indigo-600 font-semibold text-xs">
+                                  {item.word}:{" "}
+                                </span>
+                                <span className="text-gray-700 text-xs italic">
+                                  {item.sentence}
+                                </span>
+                              </div>
                             ))}
                           </div>
+                          {allSentences.length > 5 && (
+                            <p className="text-indigo-500 text-xs mt-2">
+                              +{allSentences.length - 5} more sentences written
+                            </p>
+                          )}
                         </div>
-
-                        {/* Mispronounced */}
-                        {latestRecord.wordResults.some(
-                          (w) => w.status === "mispronounced",
-                        ) && (
-                          <div className="bg-orange-50 rounded-lg p-2">
-                            <p className="text-xs font-bold text-orange-700 mb-1.5">
-                              🔶 Mispronounced Words:
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {latestRecord.wordResults
-                                .filter((w) => w.status === "mispronounced")
-                                .map((w, i) => (
-                                  <span
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: stable
-                                    key={`mp-${i}`}
-                                    className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-lg font-medium border border-orange-300"
-                                    title={
-                                      w.heard ? `You said: "${w.heard}"` : ""
-                                    }
-                                  >
-                                    {w.original}
-                                    {w.heard && (
-                                      <span className="text-orange-500 ml-1">
-                                        ({w.heard})
-                                      </span>
-                                    )}
-                                  </span>
-                                ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Missed */}
-                        {latestRecord.wordResults.some(
-                          (w) => w.status === "missed",
-                        ) && (
-                          <div className="bg-red-50 rounded-lg p-2">
-                            <p className="text-xs font-bold text-red-700 mb-1.5">
-                              🔴 Missed Words:
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {latestRecord.wordResults
-                                .filter((w) => w.status === "missed")
-                                .map((w, i) => (
-                                  <span
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: stable
-                                    key={`ms-${i}`}
-                                    className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-lg line-through font-medium border border-red-300"
-                                  >
-                                    {w.original}
-                                  </span>
-                                ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Insertions */}
-                        {(latestRecord.insertions?.length ?? 0) > 0 && (
-                          <div className="bg-blue-50 rounded-lg p-2">
-                            <p className="text-xs font-bold text-blue-700 mb-1.5">
-                              🔵 Extra Words Inserted:
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {(latestRecord.insertions ?? []).map(
-                                (word, i) => (
-                                  <span
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: stable
-                                    key={`ins-${i}`}
-                                    className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-lg font-medium border border-blue-300"
-                                  >
-                                    +{word}
-                                  </span>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                </div>
-
-                {/* Legend */}
-                <div className="flex gap-3 text-xs text-gray-400 flex-wrap">
-                  <span>
-                    <span className="inline-block w-2 h-2 rounded-sm bg-green-400 mr-1" />
-                    Correct
-                  </span>
-                  <span>
-                    <span className="inline-block w-2 h-2 rounded-sm bg-orange-400 mr-1" />
-                    Mispronounced
-                  </span>
-                  <span>
-                    <span className="inline-block w-2 h-2 rounded-sm bg-red-400 mr-1" />
-                    Missed
-                  </span>
-                  <span>
-                    <span className="inline-block w-2 h-2 rounded-sm bg-blue-400 mr-1" />
-                    Extra
-                  </span>
-                </div>
-
-                {/* All sessions history */}
-                {recordSessions.length > 1 && (
-                  <AllRecordSessionsPanel sessions={recordSessions} />
-                )}
-              </div>
-            ) : (
-              <div
-                data-ocid="report.record.empty_state"
-                className="text-center py-6 text-gray-400 text-sm"
-              >
-                No recording sessions yet. Try Read &amp; Record!
-              </div>
-            )}
-          </div>
-
-          {/* ── READ & QUIZ ── */}
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-            <p className="font-bold text-blue-800 text-sm uppercase tracking-wide mb-3">
-              📖 Read &amp; Quiz
-            </p>
-            {latestQuiz ? (
-              <QuizSessionCard s={latestQuiz} idx={0} />
-            ) : (
-              <div
-                data-ocid="report.quiz.empty_state"
-                className="text-center py-6 text-gray-400 text-sm"
-              >
-                No quiz attempts yet. Start a Read &amp; Quiz session!
-              </div>
-            )}
-          </div>
-
-          {/* ── MISSING WORDS ── */}
-          <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-4">
-            <p className="font-bold text-yellow-800 text-sm uppercase tracking-wide mb-3">
-              ✏️ Missing Words
-            </p>
-            {latestMissing ? (
-              <div
-                data-ocid="report.missing-words.item.1"
-                className="bg-white rounded-xl border border-yellow-100 px-4 py-3 flex items-center justify-between shadow-sm"
-              >
-                <div>
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {latestMissing.passageTitle || "Passage"}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {formatDate(latestMissing.timestamp)}
-                  </p>
-                </div>
-                <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                  ✓ Completed
-                </span>
-              </div>
-            ) : (
-              <div
-                data-ocid="report.missing-words.empty_state"
-                className="text-center py-6 text-gray-400 text-sm"
-              >
-                No Missing Words attempts yet.
-              </div>
-            )}
-          </div>
-
-          {/* ── PRONUNCIATION ── */}
-          <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
-            <p className="font-bold text-purple-800 text-sm uppercase tracking-wide mb-3">
-              🗣️ Pronunciation
-            </p>
-            {latestPronunciation ? (
-              <div
-                data-ocid="report.pronunciation.item.1"
-                className="bg-white rounded-xl border border-purple-100 px-4 py-3 flex items-center justify-between shadow-sm"
-              >
-                <div>
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {latestPronunciation.passageTitle || "Passage"}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {formatDate(latestPronunciation.timestamp)}
-                  </p>
-                </div>
-                <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                  ✓ Completed
-                </span>
-              </div>
-            ) : (
-              <div
-                data-ocid="report.pronunciation.empty_state"
-                className="text-center py-6 text-gray-400 text-sm"
-              >
-                No Pronunciation sessions yet.
-              </div>
-            )}
-          </div>
-
-          {/* ── INTONATION ── */}
-          <div className="bg-green-50 border border-green-100 rounded-2xl p-4">
-            <p className="font-bold text-green-800 text-sm uppercase tracking-wide mb-3">
-              🎵 Intonation
-            </p>
-            {latestIntonation ? (
-              <div
-                data-ocid="report.intonation.item.1"
-                className="bg-white rounded-xl border border-green-100 px-4 py-3 flex items-center justify-between shadow-sm"
-              >
-                <div>
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {latestIntonation.passageTitle || "Passage"}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {formatDate(latestIntonation.timestamp)}
-                  </p>
-                </div>
-                <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                  ✓ Completed
-                </span>
-              </div>
-            ) : (
-              <div
-                data-ocid="report.intonation.empty_state"
-                className="text-center py-6 text-gray-400 text-sm"
-              >
-                No Intonation sessions yet.
-              </div>
-            )}
-          </div>
-
-          {/* ── PRACTICE ACTIVITIES ── */}
-          {onNavigate && (
-            <div className="bg-gray-50 rounded-2xl p-4">
-              <p className="font-semibold text-gray-700 mb-3">
-                🎯 Practice Activities
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {practiceActivities.map((a, idx) => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    data-ocid={`report.activity.button.${idx + 1}`}
-                    onClick={() => onNavigate(a.id)}
-                    className={`${a.color} border-2 rounded-xl p-3 text-left flex items-center gap-2 hover:scale-[1.02] transition-all`}
-                  >
-                    <span className="text-xl">{a.icon}</span>
-                    <p className={`font-semibold text-xs ${a.textColor}`}>
-                      {a.title}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── BADGES ── */}
-          <div className="bg-amber-50 rounded-2xl p-4">
-            <p className="font-semibold text-gray-700 mb-3">🏅 Badges</p>
-            <div className="space-y-2">
-              {allBadges.map((b) => {
-                const earned = student.badges.includes(b.name);
-                return (
-                  <div
-                    key={b.name}
-                    className={`flex items-center gap-3 p-3 rounded-xl ${earned ? "bg-white border-2 border-amber-300" : "bg-gray-100 opacity-50"}`}
-                  >
-                    <span className="text-2xl">{b.emoji}</span>
-                    <div>
-                      <p
-                        className={`font-semibold text-sm ${earned ? "text-amber-800" : "text-gray-500"}`}
-                      >
-                        {b.name}
-                      </p>
-                      <p className="text-xs text-gray-400">{b.desc}</p>
+                      )}
                     </div>
-                    {earned && (
-                      <span className="ml-auto text-green-500 text-lg">✓</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                  )}
+                </div>
+              );
+            })()}
 
-          <Button
-            data-ocid="report.reset.button"
-            variant="outline"
-            onClick={onReset}
-            className="w-full rounded-xl border-rose-200 text-rose-500 hover:bg-rose-50"
-          >
-            Reset Progress
-          </Button>
+            {/* ── BADGES ── */}
+            <div className="bg-amber-50 rounded-2xl p-4">
+              <p className="font-semibold text-gray-700 mb-3">🏅 Badges</p>
+              <div className="space-y-2">
+                {allBadges.map((b) => {
+                  const earned = student.badges.includes(b.name);
+                  return (
+                    <div
+                      key={b.name}
+                      className={`flex items-center gap-3 p-3 rounded-xl ${earned ? "bg-white border-2 border-amber-300" : "bg-gray-100 opacity-50"}`}
+                    >
+                      <span className="text-2xl">{b.emoji}</span>
+                      <div>
+                        <p
+                          className={`font-semibold text-sm ${earned ? "text-amber-800" : "text-gray-500"}`}
+                        >
+                          {b.name}
+                        </p>
+                        <p className="text-xs text-gray-400">{b.desc}</p>
+                      </div>
+                      {earned && (
+                        <span className="ml-auto text-green-500 text-lg">
+                          ✓
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Button
+              data-ocid="report.reset.button"
+              variant="outline"
+              onClick={onReset}
+              className="w-full rounded-xl border-rose-200 text-rose-500 hover:bg-rose-50 no-print"
+            >
+              Reset Progress
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

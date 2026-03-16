@@ -16,7 +16,10 @@ export interface Session {
     | "missing-words"
     | "record"
     | "pronunciation"
-    | "intonation";
+    | "intonation"
+    | "vocab_learn"
+    | "vocab_test"
+    | "weekly_vocab_test";
   timestamp: number;
   quizAnswers?: number[];
   passageTitle?: string;
@@ -28,6 +31,19 @@ export interface GradeHistoryEntry {
   grade: number;
   timestamp: number;
   reason: string;
+}
+
+export interface WeeklyReportData {
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  passagesCompleted: number;
+  vocabWordsLearned: number;
+  weeklyTestScore: number | null;
+  readingScores: number[];
+  comprehensionScores: number[];
+  comprehensionLevel: string;
+  improvementTrend: string;
 }
 
 export interface StudentData {
@@ -42,6 +58,10 @@ export interface StudentData {
   proficiencyScore: number;
   proficiencyGrade: number;
   gradeHistory: GradeHistoryEntry[];
+  vocabSentences?: Record<string, Record<string, string>>;
+  weeklyReports?: WeeklyReportData[];
+  dayStartDate?: number;
+  currentDay200?: number;
 }
 
 const STORAGE_KEY = "readwise_student";
@@ -59,6 +79,9 @@ const defaultStudent: StudentData = {
   proficiencyScore: 0,
   proficiencyGrade: 0,
   gradeHistory: [],
+  vocabSentences: {},
+  weeklyReports: [],
+  currentDay200: 1,
 };
 
 export function migrateStudentData(parsed: StudentData): StudentData {
@@ -69,6 +92,9 @@ export function migrateStudentData(parsed: StudentData): StudentData {
   if (!parsed.gradeHistory) parsed.gradeHistory = [];
   if (!parsed.sessions) parsed.sessions = [];
   if (!parsed.badges) parsed.badges = [];
+  if (!parsed.vocabSentences) parsed.vocabSentences = {};
+  if (!parsed.weeklyReports) parsed.weeklyReports = [];
+  if (!parsed.currentDay200) parsed.currentDay200 = 1;
   return parsed;
 }
 
@@ -137,6 +163,7 @@ export function useStudentStore() {
     name: string,
     grade: number,
     score: number,
+    startDay200?: number,
   ) => {
     const entry: GradeHistoryEntry = {
       grade,
@@ -152,6 +179,8 @@ export function useStudentStore() {
       proficiencyScore: score,
       proficiencyGrade: grade,
       gradeHistory: [entry],
+      dayStartDate: Date.now(),
+      currentDay200: startDay200 ?? 1,
     });
   };
 
@@ -166,6 +195,16 @@ export function useStudentStore() {
     });
   };
 
+  const advanceDay200 = () => {
+    const current = student.currentDay200 ?? 1;
+    const next = Math.min(200, current + 1);
+    save({ ...student, currentDay200: next });
+  };
+
+  const setDay200 = (day: number) => {
+    save({ ...student, currentDay200: Math.max(1, Math.min(200, day)) });
+  };
+
   const addSession = (session: Omit<Session, "id" | "timestamp">) => {
     const newSession: Session = {
       ...session,
@@ -177,23 +216,6 @@ export function useStudentStore() {
       sessions: [...student.sessions, newSession],
       lastActivity: Date.now(),
     };
-
-    if (session.activity === "quiz") {
-      const prevGrade = updated.grade;
-      if (session.score >= 80 && updated.grade < 5) {
-        updated.grade = updated.grade + 1;
-      } else if (session.score < 50 && updated.grade > 1) {
-        updated.grade = updated.grade - 1;
-      }
-      if (updated.grade !== prevGrade) {
-        const entry: GradeHistoryEntry = {
-          grade: updated.grade,
-          timestamp: Date.now(),
-          reason: "Quiz Performance",
-        };
-        updated.gradeHistory = [...(student.gradeHistory ?? []), entry];
-      }
-    }
 
     const badges = new Set(updated.badges);
     const quizCount = updated.sessions.filter(
@@ -217,6 +239,26 @@ export function useStudentStore() {
 
     save(updated);
     return updated.grade;
+  };
+
+  const saveVocabSentences = (
+    passageId: string,
+    sentences: Record<string, string>,
+  ) => {
+    save({
+      ...student,
+      vocabSentences: {
+        ...(student.vocabSentences ?? {}),
+        [passageId]: sentences,
+      },
+    });
+  };
+
+  const addWeeklyReport = (report: WeeklyReportData) => {
+    save({
+      ...student,
+      weeklyReports: [...(student.weeklyReports ?? []), report],
+    });
   };
 
   const updateGrade = (grade: number) => {
@@ -243,9 +285,13 @@ export function useStudentStore() {
     completeWithProficiency,
     addSession,
     advancePassage,
+    advanceDay200,
+    setDay200,
     updateGrade,
     reset,
     averageScore,
+    saveVocabSentences,
+    addWeeklyReport,
   };
 }
 
